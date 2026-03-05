@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Mood Playlist - Light Mode</title>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #FFFFFF; /* 배경색을 흰색으로 변경 */
+            color: #121212; /* 글자색을 검은색 계열로 변경 */
+            font-family: 'Circular', 'DM Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: #F5F5F5; }
+        ::-webkit-scrollbar-thumb { background: #CCC; border-radius: 6px; border: 3px solid #F5F5F5; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // 데이터 (기존과 동일)
+        const MOOD_DATA = {
+            chill: { total: 724, sil: 0.226, clusters: [
+                { id:0, n:358, sil:0.216, label:"업비트 칠팝", desc:"에너지 있는 밝고 여유로운 칠", tags_up:["danceability","energy","valence","tempo"], tags_dn:["acousticness"], top3:[["NVMD","Denise Julia",79],["Next Up","JBee",77],["At My Worst","Pink Sweat$",76]], means:{danceability:0.7238,energy:0.5542,valence:0.5584,tempo:119.7,acousticness:0.3043,instrumentalness:0.0438} },
+                { id:1, n:108, sil:0.246, label:"앰비언트 기악", desc:"가사 없는 로파이·앰비언트", tags_up:["instrumentalness"], tags_dn:["tempo"], top3:[["Eternal Youth","RŮDE",71],["i'm closing my eyes","potsu",69],["Controlla","Idealism",67]], means:{danceability:0.633,energy:0.3194,valence:0.2655,tempo:109.4,acousticness:0.69,instrumentalness:0.8406} },
+                { id:2, n:258, sil:0.233, label:"감성 어쿠스틱", desc:"조용하고 차분한 보컬 중심", tags_up:[], tags_dn:["danceability"], top3:[["Another Love","Tom Odell",93],["double take","dhruv",83],["Happier Than Ever","ASTN",76]], means:{danceability:0.5754,energy:0.3755,valence:0.288,tempo:112.9,acousticness:0.6514,instrumentalness:0.024} }
+            ]},
+            happy: { total: 972, sil: 0.211, clusters: [
+                { id:0, n:469, sil:0.313, label:"유로댄스 해피", desc:"고에너지·고템포 유로팝", tags_up:["tempo"], tags_dn:["danceability"], top3:[["Us Against The World","Darren Styles",62],["The Logical Song","Scooter",62],["Nessaja","Scooter",61]], means:{danceability:0.486,energy:0.9426,valence:0.2524,tempo:161.1,acousticness:0.0534,instrumentalness:0.0871} },
+                { id:1, n:239, sil:0.115, label:"따뜻한 해피팝", desc:"어쿠스틱하고 긍정적인 분위기", tags_up:["danceability","valence","acousticness"], tags_dn:["tempo"], top3:[["Wanna Play?","The Prophet",65],["Dreams (Will Come Alive)","2 Brothers",65],["How Much Is The Fish?","Scooter",60]], means:{danceability:0.6502,energy:0.9197,valence:0.5413,tempo:135.8,acousticness:0.0931,instrumentalness:0.0845} },
+                { id:2, n:264, sil:0.118, label:"기악 해피", desc:"가사 없는 해피 배경음", tags_up:["instrumentalness"], tags_dn:["energy","acousticness"], top3:[["DLMD","Darren Styles",59],["Switch","Darren Styles",56],["This Moment","Party Animals",50]], means:{danceability:0.586,energy:0.8491,valence:0.2784,tempo:153.7,acousticness:0.0362,instrumentalness:0.7201} }
+            ]},
+            romance: { total: 890, sil: 0.287, clusters: [
+                { id:0, n:520, sil:0.369, label:"서정 로맨스", desc:"조용하고 감성적인 사랑 노래", tags_up:[], tags_dn:["energy"], top3:[["Чистые пруды","Igor Talkov",34],["Kalinka, Kalinka","Ivan Rebroff",33],["Kuchalara","Rashid Beibutov",33]], means:{danceability:0.3785,energy:0.2237,valence:0.2702,tempo:105.8,acousticness:0.9379,instrumentalness:0.0185} },
+                { id:1, n:304, sil:0.163, label:"댄서블 로맨스", desc:"빠르고 역동적인 러브송", tags_up:["danceability","energy","valence","tempo"], tags_dn:["acousticness"], top3:[["Эти глаза напротив","Valery Obodzinsky",35],["Katyusha","Georgi Vinogradov",34],["Я тебя подожду","Maya Kristalinskaya",31]], means:{danceability:0.539,energy:0.4291,valence:0.6239,tempo:118.2,acousticness:0.7323,instrumentalness:0.0137} },
+                { id:2, n:66, sil:0.217, label:"기악 로맨스", desc:"발라이카·클래식 기반 서정", tags_up:["instrumentalness"], tags_dn:[], top3:[["Katyusha","Ivan Rebroff",25],["До завтра","Vladimir Troshin",24],["Les bateliers","Ivan Rebroff",15]], means:{danceability:0.3608,energy:0.2923,valence:0.3514,tempo:103.6,acousticness:0.9203,instrumentalness:0.5026} }
+            ]},
+            sad: { total: 726, sil: 0.220, clusters: [
+                { id:0, n:47, sil:0.328, label:"앰비언트 슬픔", desc:"가장 순수하게 슬픈 기악곡", tags_up:["instrumentalness"], tags_dn:["danceability","energy","valence"], top3:[["I'm Only a Fool for You","Dybbukk",70],["Nobody Cares","Kina",65],["U're Mine","Kina",64]], means:{danceability:0.6573,energy:0.3227,valence:0.309,tempo:123.3,acousticness:0.6291,instrumentalness:0.7342} },
+                { id:1, n:383, sil:0.236, label:"격정적 슬픔", desc:"이모·트랩 에너지 있는 슬픔", tags_up:["danceability","energy","valence"], tags_dn:["acousticness"], top3:[["By the Sword","iamjakehill",75],["NUMB","Chri$tian Gate$",73],["MARCELINE","Lil God Dan",73]], means:{danceability:0.7147,energy:0.6105,valence:0.4907,tempo:125.1,acousticness:0.1818,instrumentalness:0.0079} },
+                { id:2, n:296, sil:0.182, label:"인디팝 슬픔", desc:"느리고 감성적인 대중적 슬픔", tags_up:[], tags_dn:["tempo"], top3:[["death bed","Powfu;beabadoobee",83],["Living Life, In The Night","Cheriimoya",83],["Get You The Moon","Kina;Snøw",80]], means:{danceability:0.678,energy:0.3972,valence:0.4034,tempo:114.6,acousticness:0.6497,instrumentalness:0.0115} }
+            ]},
+            sleep: { total: 827, sil: 0.299, clusters: [
+                { id:0, n:386, sil:0.450, label:"조용한 수면", desc:"가장 부드러운 대중적 수면음악", tags_up:[], tags_dn:["tempo"], top3:[["Brown Sleep Noise","Sleep Miracle",80],["Herinneringen","Sohn Aelia",74],["Ons","Huma",71]], means:{danceability:0.1537,energy:0.1156,valence:0.0541,tempo:92.2,acousticness:0.9173,instrumentalness:0.8383} },
+                { id:1, n:317, sil:0.175, label:"백색소음", desc:"전자 노이즈·핑크소음 계열", tags_up:["energy"], tags_dn:["acousticness"], top3:[["Weißes Rauschen","Weißes Rauschen HD",67],["Shhhh Baby Shusher","Baby Sleep",66],["Womb Heartbeat","Silent Knights",57]], means:{danceability:0.1898,energy:0.757,valence:0.0185,tempo:99.8,acousticness:0.3328,instrumentalness:0.7417} },
+                { id:2, n:124, sil:0.145, label:"리드미컬 수면", desc:"음악에 가까운 수면 사운드", tags_up:["danceability","valence","tempo"], tags_dn:["instrumentalness"], top3:[["Endless Sky","Nils August Valentin",61],["Shhhh 1","Silent Knights",60],["Delta Sinus Noise Pad","Wiser Noise",60]], means:{danceability:0.3449,energy:0.1899,valence:0.2434,tempo:111.5,acousticness:0.9141,instrumentalness:0.4064} }
+            ]},
+            study: { total: 998, sil: 0.210, clusters: [
+                { id:0, n:361, sil:0.175, label:"업비트 BGM", desc:"활기찬 작업·집중 배경음악", tags_up:["energy","valence","tempo"], tags_dn:["acousticness"], top3:[["Ritual","Talented Mr Tipsy",53],["r u kiddin me?","Wibke Komi",51],["Elastic","4to28",50]], means:{danceability:0.7068,energy:0.5288,valence:0.5228,tempo:117.5,acousticness:0.2693,instrumentalness:0.8456} },
+                { id:1, n:534, sil:0.235, label:"로파이 재즈", desc:"전형적인 공부할 때 듣는 음악", tags_up:["acousticness"], tags_dn:["danceability","energy","valence"], top3:[["Distractions","Timothy Infinite",55],["Shoreditch","Clint Is Quinn",55],["Skin Tone","Timothy Infinite",54]], means:{danceability:0.6672,energy:0.3236,valence:0.3097,tempo:108.7,acousticness:0.7219,instrumentalness:0.8585} },
+                { id:2, n:103, sil:0.206, label:"보컬 스터디", desc:"가사 있는 집중 음악 소수 계열", tags_up:[], tags_dn:["instrumentalness"], top3:[["Latex","Sail & Weep",50],["Morning Stretch","Timothy Infinite",50],["The Sun's Out","Sarah, the Illstrumentalist",46]], means:{danceability:0.7032,energy:0.451,valence:0.4625,tempo:108.0,acousticness:0.4543,instrumentalness:0.2351} }
+            ]},
+            party: { total: 988, sil: 0.270, clusters: [
+                { id:0, n:692, sil:0.352, label:"테크노 댄스홀", desc:"고에너지 유러피안 파티", tags_up:["energy","tempo"], tags_dn:["danceability","valence"], top3:[["Olivia","Die Zipfelbuben;DJ Cashi",74],["Layla","DJ Robin;Schürze",74],["Dicht im Flieger","Julian Sommer",72]], means:{danceability:0.6359,energy:0.9199,valence:0.655,tempo:136.1,acousticness:0.0531,instrumentalness:0.0011} },
+                { id:1, n:1, sil:0.0, label:"아웃라이어", desc:"KMeans 수렴 결과 단독 군집", tags_up:["danceability","valence","instrumentalness"], tags_dn:["acousticness"], top3:[["I Like To Move It","The Party Cats",37]], means:{danceability:0.817,energy:0.864,valence:0.826,tempo:130.0,acousticness:0.0,instrumentalness:0.49} },
+                { id:2, n:295, sil:0.079, label:"어쿠스틱 파티", desc:"분위기 전환용 슬로우 파티", tags_up:["acousticness"], tags_dn:["energy","tempo"], top3:[["LEBENSLANG - HBz Remix","Tream;HBz",73],["Easy Peasy","FiNCH;Leony;VIZE",65],["Partyanimal","Micha von der Rampe",64]], means:{danceability:0.741,energy:0.758,valence:0.7393,tempo:120.4,acousticness:0.1828,instrumentalness:0.0014} }
+            ]}
+        };
+
+        const MOOD_META = {
+            chill:   { emoji:"🌊", color:"#1DB954", accent:"#14B8A6", desc:"여유롭고 편안한 분위기" },
+            happy:   { emoji:"☀️", color:"#F59E0B", accent:"#D97706", desc:"밝고 에너지 넘치는 기분" },
+            romance: { emoji:"🌹", color:"#EC4899", accent:"#BE185D", desc:"설레고 감성적인 순간" },
+            sad:     { emoji:"🌧️", color:"#3B82F6", accent:"#1D4ED8", desc:"감정에 솔직한 시간" },
+            sleep:   { emoji:"🌙", color:"#8B5CF6", accent:"#6D28D9", desc:"깊고 편안한 휴식" },
+            study:   { emoji:"📚", color:"#059669", accent:"#047857", desc:"집중력 최대로 끌어올리기" },
+            party:   { emoji:"🎉", color:"#EF4444", accent:"#B91C1C", desc:"텐션 폭발하는 파티 타임" },
+        };
+
+        const BAR_FEATURES = ["danceability","energy","valence","acousticness","instrumentalness"];
+        const FEATURE_LABEL = { danceability:"댄서블", energy:"에너지", valence:"긍정감", acousticness:"어쿠스틱", instrumentalness:"기악성", tempo:"템포" };
+
+        const ZSCORE_Q = {
+            chill:   [{feat:"instrumentalness",hi:"🎹 기악 중심",lo:"🎤 보컬 중심"},{feat:"energy",hi:"⚡ 에너지 있게",lo:"🍃 조용하게"}],
+            happy:   [{feat:"energy",hi:"🔥 강렬하게",lo:"😊 부드럽게"},{feat:"acousticness",hi:"🎸 어쿠스틱",lo:"🎛️ 전자음"}],
+            romance: [{feat:"energy",hi:"💃 역동적으로",lo:"🕯️ 잔잔하게"},{feat:"instrumentalness",hi:"🎻 기악 중심",lo:"🎤 보컬 중심"}],
+            sad:     [{feat:"energy",hi:"😤 격정적으로",lo:"💧 잔잔하게"},{feat:"instrumentalness",hi:"🎹 음악으로 위로",lo:"💬 가사로 공감"}],
+            sleep:   [{feat:"energy",hi:"📻 백색소음",lo:"🌿 자연스럽게"},{feat:"tempo",hi:"🎵 리드미컬하게",lo:"😴 느리게"}],
+            study:   [{feat:"acousticness",hi:"☕ 어쿠스틱 로파이",lo:"🎛️ 전자음 BGM"},{feat:"energy",hi:"⚡ 활기찬 집중",lo:"🧘 차분한 집중"}],
+            party:   [{feat:"energy",hi:"🔊 고에너지",lo:"🎊 적당한 분위기"},{feat:"valence",hi:"😁 밝고 흥겨운",lo:"💪 강렬하고 파워풀" }],
+        };
+
+        // TSP 및 생성 로직
+        function tspSort(songs) {
+            if (songs.length <= 1) return songs;
+            const feats = ["danceability","energy","valence","tempo","acousticness","instrumentalness"];
+            const dist = (a,b) => {
+                const va=feats.map(f=>a[f]||0), vb=feats.map(f=>b[f]||0);
+                const dot=va.reduce((s,v,i)=>s+v*vb[i],0);
+                const ma=Math.sqrt(va.reduce((s,v)=>s+v*v,0)), mb=Math.sqrt(vb.reduce((s,v)=>s+v*v,0));
+                return 1-(ma&&mb?dot/(ma*mb):0);
+            };
+            const rem=[...songs.slice(1)], res=[songs[0]];
+            while(rem.length){
+                const last=res[res.length-1];
+                let bi=0,bd=Infinity;
+                rem.forEach((s,i)=>{const d=dist(last,s);if(d<bd){bd=d;bi=i;}});
+                res.push(rem.splice(bi,1)[0]);
+            }
+            return res;
+        }
+
+        function buildPlaylist(mood, clusterId, zPrefs) {
+            const cl = MOOD_DATA[mood].clusters[clusterId];
+            const seed = { track_name:cl.top3[0][0], artists:cl.top3[0][1], popularity:cl.top3[0][2], ...cl.means };
+            const qs = ZSCORE_Q[mood]||[];
+            qs.forEach(q=>{
+                if(zPrefs[q.feat]==="hi") seed[q.feat]=Math.min(1,seed[q.feat]*1.3);
+                if(zPrefs[q.feat]==="lo") seed[q.feat]=Math.max(0,seed[q.feat]*0.7);
+            });
+            const pool = MOOD_DATA[mood].clusters.flatMap(c=>
+                c.top3.map(t=>({track_name:t[0],artists:t[1],popularity:t[2],...c.means}))
+            );
+            const feats=["danceability","energy","valence","tempo","acousticness","instrumentalness"];
+            const sv=feats.map(f=>seed[f]||0), sm=Math.sqrt(sv.reduce((s,v)=>s+v*v,0));
+            const scored=pool.map(s=>{
+                const av=feats.map(f=>s[f]||0), am=Math.sqrt(av.reduce((s,v)=>s+v*v,0));
+                const dot=sv.reduce((s,v,i)=>s+v*av[i],0);
+                return{...s,sim:sm&&am?dot/(sm*am):0};
+            }).sort((a,b)=>b.sim-a.sim);
+            const artistCount={}, result=[];
+            for(const s of scored){
+                if(result.length>=20) break;
+                if((artistCount[s.artists]||0)>=2) continue;
+                artistCount[s.artists]=(artistCount[s.artists]||0)+1;
+                result.push(s);
+            }
+            return tspSort([seed,...result.slice(0,19)]);
+        }
+
+        // 컴포넌트
+        const SpotifyLogo = () => (
+            <svg viewBox="0 0 24 24" fill="#1DB954" style={{width:28,height:28}}>
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+            </svg>
+        );
+
+        function SpotifyMoodApp() {
+            const [step, setStep] = useState(0);
+            const [mood, setMood] = useState(null);
+            const [clusterId, setCId] = useState(null);
+            const [zPrefs, setZPrefs] = useState({});
+            const [playlist, setPlaylist] = useState([]);
+            const [nowPlaying, setNowPlaying] = useState(0);
+            const [playing, setPlaying] = useState(false);
+
+            const meta = mood ? MOOD_META[mood] : null;
+            const color = meta?.color || "#1DB954";
+
+            const handleMood = (m) => { setMood(m); setZPrefs({}); setCId(null); setStep(1); };
+            const handleCluster = (id) => { setCId(id); setStep(2); };
+            const handleBuild = () => {
+                const pl = buildPlaylist(mood, clusterId, zPrefs);
+                setPlaylist(pl); setNowPlaying(0); setPlaying(true); setStep(4);
+            };
+
+            return (
+                <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 20px" }}>
+                    {/* 상단 헤더 */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 40, borderBottom: "1px solid #EEE", paddingBottom: 20 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <SpotifyLogo />
+                            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900 }}>Mood System</h2>
+                        </div>
+                        {step > 0 && <button onClick={() => setStep(0)} style={{ background: "none", border: "1px solid #DDD", padding: "8px 16px", borderRadius: 20, cursor: "pointer" }}>처음으로</button>}
+                    </div>
+
+                    {/* 스텝 0: 무드 선택 */}
+                    {step === 0 && (
+                        <div>
+                            <h1 style={{ fontSize: 32, marginBottom: 10 }}>지금 기분이 어때요?</h1>
+                            <p style={{ color: "#666", marginBottom: 30 }}>원하는 분위기를 선택하면 분석된 결에 맞춰 추천해 드릴게요.</p>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
+                                {Object.entries(MOOD_META).map(([m, mt]) => (
+                                    <button key={m} onClick={() => handleMood(m)} style={{ 
+                                        background: "#FFF", border: "1px solid #EEE", borderRadius: 16, padding: "24px", 
+                                        textAlign: "left", cursor: "pointer", transition: "all 0.2s",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+                                    }}>
+                                        <div style={{ fontSize: 32, marginBottom: 10 }}>{mt.emoji}</div>
+                                        <div style={{ fontSize: 18, fontWeight: 700, color: mt.color }}>{m}</div>
+                                        <p style={{ color: "#888", fontSize: 14 }}>{mt.desc}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 스텝 1: 군집 선택 */}
+                    {step === 1 && (
+                        <div>
+                            <h2 style={{ fontSize: 28, color: color }}>{meta.emoji} {mood.toUpperCase()}</h2>
+                            <p style={{ marginBottom: 30 }}>KMeans로 분석된 3가지 음악 스타일 중 하나를 골라보세요.</p>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+                                {MOOD_DATA[mood].clusters.map(cl => (
+                                    <button key={cl.id} onClick={() => handleCluster(cl.id)} style={{ background: "#FFF", border: "2px solid #EEE", borderRadius: 16, padding: "20px", textAlign: "left", cursor: "pointer" }}>
+                                        <h3 style={{ margin: "0 0 8px", color: color }}>{cl.label}</h3>
+                                        <p style={{ fontSize: 12, color: "#666" }}>{cl.desc}</p>
+                                        <div style={{ borderTop: "1px solid #EEE", paddingTop: 10 }}>
+                                            {cl.top3.map(([n], i) => <div key={i} style={{ fontSize: 11, color: "#999" }}>• {n}</div>)}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 스텝 2: 취향 세분화 */}
+                    {step === 2 && (
+                        <div style={{ textAlign: "center", maxWidth: 400, margin: "0 auto" }}>
+                            <h2>세밀한 취향 조정</h2>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 16, margin: "30px 0" }}>
+                                {ZSCORE_Q[mood].map(q => (
+                                    <div key={q.feat} style={{ background: "#F9F9F9", padding: "20px", borderRadius: 12 }}>
+                                        <p style={{ fontWeight: 700, marginBottom: 12 }}>{FEATURE_LABEL[q.feat]} 정도</p>
+                                        <div style={{ display: "flex", gap: 8 }}>
+                                            <button onClick={() => handleZPref(q.feat, "hi")} style={{ flex: 1, padding: "10px", background: zPrefs[q.feat]==="hi"?color:"#FFF", color: zPrefs[q.feat]==="hi"?"#FFF":"#000", border: "1px solid #DDD", borderRadius: 8 }}>{q.hi}</button>
+                                            <button onClick={() => handleZPref(q.feat, "lo")} style={{ flex: 1, padding: "10px", background: zPrefs[q.feat]==="lo"?color:"#FFF", color: zPrefs[q.feat]==="lo"?"#FFF":"#000", border: "1px solid #DDD", borderRadius: 8 }}>{q.lo}</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <button onClick={handleBuild} style={{ width: "100%", padding: "16px", background: color, color: "#FFF", border: "none", borderRadius: 40, fontWeight: 700, cursor: "pointer", fontSize: 16 }}>플레이리스트 만들기</button>
+                        </div>
+                    )}
+
+                    {/* 스텝 4: 결과 화면 */}
+                    {step === 4 && (
+                        <div>
+                            <div style={{ background: color, color: "#FFF", padding: "30px", borderRadius: 20, marginBottom: 20 }}>
+                                <h2 style={{ margin: 0 }}>{mood.toUpperCase()} Playlist</h2>
+                                <p style={{ opacity: 0.8 }}>{playlist.length}곡이 준비되었습니다.</p>
+                                <button onClick={() => setPlaying(!playing)} style={{ background: "#FFF", color: color, border: "none", padding: "12px 24px", borderRadius: 30, fontWeight: 900, marginTop: 10 }}>{playing ? "일시정지" : "재생 시작"}</button>
+                            </div>
+                            <div style={{ border: "1px solid #EEE", borderRadius: 16, overflow: "hidden" }}>
+                                {playlist.map((s, i) => (
+                                    <div key={i} onClick={() => { setNowPlaying(i); setPlaying(true); }} style={{ padding: "12px 20px", borderBottom: "1px solid #F5F5F5", display: "grid", gridTemplateColumns: "30px 1fr 60px", alignItems: "center", cursor: "pointer", background: i === nowPlaying ? "#F0FFF0" : "#FFF" }}>
+                                        <span style={{ color: i === nowPlaying ? color : "#CCC", fontWeight: 700 }}>{i + 1}</span>
+                                        <div>
+                                            <div style={{ fontWeight: 700, color: i === nowPlaying ? color : "#000" }}>{s.track_name}</div>
+                                            <div style={{ fontSize: 12, color: "#999" }}>{s.artists}</div>
+                                        </div>
+                                        <div style={{ textAlign: "right", fontSize: 11, color: "#CCC" }}>{s.popularity} pop</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SpotifyMoodApp />);
+    </script>
+</body>
+</html>
