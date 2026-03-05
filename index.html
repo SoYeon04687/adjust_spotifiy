@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotify Mood Playlist - Light Mode</title>
+    <title>Spotify Mood Playlist - Ensemble Project</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -14,14 +14,15 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #FFFFFF; /* 배경색을 흰색으로 변경 */
-            color: #121212; /* 글자색을 검은색 계열로 변경 */
+            background-color: #121212;
             font-family: 'Circular', 'DM Sans', 'Helvetica Neue', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
+        /* 스포티파이 특유의 스크롤바 스타일 */
         ::-webkit-scrollbar { width: 12px; }
-        ::-webkit-scrollbar-track { background: #F5F5F5; }
-        ::-webkit-scrollbar-thumb { background: #CCC; border-radius: 6px; border: 3px solid #F5F5F5; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #535353; border-radius: 6px; border: 3px solid #121212; }
+        ::-webkit-scrollbar-thumb:hover { background: #B3B3B3; }
     </style>
 </head>
 <body>
@@ -30,7 +31,9 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // 데이터 (기존과 동일)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 데이터 및 로직 (사용자가 주신 코드 기반)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         const MOOD_DATA = {
             chill: { total: 724, sil: 0.226, clusters: [
                 { id:0, n:358, sil:0.216, label:"업비트 칠팝", desc:"에너지 있는 밝고 여유로운 칠", tags_up:["danceability","energy","valence","tempo"], tags_dn:["acousticness"], top3:[["NVMD","Denise Julia",79],["Next Up","JBee",77],["At My Worst","Pink Sweat$",76]], means:{danceability:0.7238,energy:0.5542,valence:0.5584,tempo:119.7,acousticness:0.3043,instrumentalness:0.0438} },
@@ -70,17 +73,18 @@
         };
 
         const MOOD_META = {
-            chill:   { emoji:"🌊", color:"#1DB954", accent:"#14B8A6", desc:"여유롭고 편안한 분위기" },
-            happy:   { emoji:"☀️", color:"#F59E0B", accent:"#D97706", desc:"밝고 에너지 넘치는 기분" },
-            romance: { emoji:"🌹", color:"#EC4899", accent:"#BE185D", desc:"설레고 감성적인 순간" },
-            sad:     { emoji:"🌧️", color:"#3B82F6", accent:"#1D4ED8", desc:"감정에 솔직한 시간" },
-            sleep:   { emoji:"🌙", color:"#8B5CF6", accent:"#6D28D9", desc:"깊고 편안한 휴식" },
-            study:   { emoji:"📚", color:"#059669", accent:"#047857", desc:"집중력 최대로 끌어올리기" },
-            party:   { emoji:"🎉", color:"#EF4444", accent:"#B91C1C", desc:"텐션 폭발하는 파티 타임" },
+            chill:   { emoji:"🌊", color:"#1ED760", accent:"#14B8A6", bg:"from-teal-950 via-slate-950", desc:"여유롭고 편안한 분위기" },
+            happy:   { emoji:"☀️", color:"#FFD700", accent:"#F59E0B", bg:"from-yellow-950 via-slate-950", desc:"밝고 에너지 넘치는 기분" },
+            romance: { emoji:"🌹", color:"#FF6B9D", accent:"#EC4899", bg:"from-pink-950 via-slate-950", desc:"설레고 감성적인 순간" },
+            sad:     { emoji:"🌧️", color:"#60A5FA", accent:"#3B82F6", bg:"from-blue-950 via-slate-950", desc:"감정에 솔직한 시간" },
+            sleep:   { emoji:"🌙", color:"#A78BFA", accent:"#7C3AED", bg:"from-violet-950 via-slate-950", desc:"깊고 편안한 휴식" },
+            study:   { emoji:"📚", color:"#1ED760", accent:"#1DB954", bg:"from-green-950 via-slate-950", desc:"집중력 최대로 끌어올리기" },
+            party:   { emoji:"🎉", color:"#FF6B6B", accent:"#EF4444", bg:"from-red-950 via-slate-950", desc:"텐션 폭발하는 파티 타임" },
         };
 
         const BAR_FEATURES = ["danceability","energy","valence","acousticness","instrumentalness"];
         const FEATURE_LABEL = { danceability:"댄서블", energy:"에너지", valence:"긍정감", acousticness:"어쿠스틱", instrumentalness:"기악성", tempo:"템포" };
+        const FEATURE_DESC = { danceability:"리듬감·춤추기 좋은 정도", energy:"강도·활력 수준", valence:"긍정적·행복한 정도", acousticness:"어쿠스틱 악기 비율", instrumentalness:"가사 없는 기악 비율", tempo:"분당 비트(BPM)" };
 
         const ZSCORE_Q = {
             chill:   [{feat:"instrumentalness",hi:"🎹 기악 중심",lo:"🎤 보컬 중심"},{feat:"energy",hi:"⚡ 에너지 있게",lo:"🍃 조용하게"}],
@@ -92,7 +96,6 @@
             party:   [{feat:"energy",hi:"🔊 고에너지",lo:"🎊 적당한 분위기"},{feat:"valence",hi:"😁 밝고 흥겨운",lo:"💪 강렬하고 파워풀" }],
         };
 
-        // TSP 및 생성 로직
         function tspSort(songs) {
             if (songs.length <= 1) return songs;
             const feats = ["danceability","energy","valence","tempo","acousticness","instrumentalness"];
@@ -140,13 +143,94 @@
             return tspSort([seed,...result.slice(0,19)]);
         }
 
-        // 컴포넌트
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // UI 컴포넌트들
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         const SpotifyLogo = () => (
-            <svg viewBox="0 0 24 24" fill="#1DB954" style={{width:28,height:28}}>
+            <svg viewBox="0 0 24 24" fill="currentColor" style={{width:28,height:28}}>
                 <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
             </svg>
         );
 
+        const StepBar = ({ step, color }) => {
+            const steps = ["무드 선택","군집 카드","취향 세분화","플리 생성"];
+            return (
+                <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:40}}>
+                    {steps.map((label,i)=>(
+                        <div key={i} style={{display:"flex",alignItems:"center",flex: i<3?1:"none"}}>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                                <div style={{
+                                    width:28,height:28,borderRadius:"50%",display:"flex",alignItems:"center",
+                                    justifyContent:"center",fontSize:11,fontWeight:700,transition:"all 0.4s",
+                                    background: step>i?"#1ED760": step===i?(color||"#1ED760"):"#282828",
+                                    color: step>=i?"#000":"#535353",
+                                    boxShadow: step===i?`0 0 0 3px ${color||"#1ED760"}33`:"none",
+                                }}>
+                                    {step>i?"✓":i+1}
+                                </div>
+                                <span style={{fontSize:10,color:step>=i?"#B3B3B3":"#535353",whiteSpace:"nowrap",transition:"color 0.3s"}}>
+                                    {label}
+                                </span>
+                            </div>
+                            {i<3 && (
+                                <div style={{flex:1,height:2,background: step>i?"#1ED760":"#282828",
+                                    margin:"0 8px",marginBottom:20,transition:"background 0.4s"}}/>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        const FeatureBar = ({ feat, value, color, maxVal=1 }) => {
+            const [hover, setHover] = useState(false);
+            const pct = Math.min(100, (value/maxVal)*100);
+            return (
+                <div style={{marginBottom:6}}
+                    onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                        <span style={{fontSize:10,color:"#B3B3B3",fontWeight:500}}>{FEATURE_LABEL[feat]}</span>
+                        <span style={{fontSize:10,color:"#535353"}}>
+                            {feat==="tempo"?`${Math.round(value)} BPM`:`${Math.round(pct)}%`}
+                        </span>
+                    </div>
+                    <div style={{background:"#282828",borderRadius:3,height:3,overflow:"visible",position:"relative"}}>
+                        <div style={{
+                            width:`${pct}%`,height:"100%",borderRadius:3,
+                            background:`linear-gradient(90deg,${color}99,${color})`,
+                            transition:"width 0.6s cubic-bezier(0.4,0,0.2,1)"
+                        }}/>
+                    </div>
+                    {hover && (
+                        <div style={{
+                            position:"absolute",background:"#282828",border:"1px solid #333",
+                            borderRadius:6,padding:"6px 10px",fontSize:10,color:"#B3B3B3",
+                            marginTop:4,zIndex:100,whiteSpace:"nowrap",pointerEvents:"none",
+                            boxShadow:"0 8px 24px #00000080"
+                        }}>
+                            {FEATURE_DESC[feat]}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const SilBadge = ({ sil }) => {
+            const col = sil>=0.35?"#1ED760":sil>=0.20?"#F59E0B":"#EF4444";
+            return (
+                <span style={{
+                    background:`${col}22`,color:col,
+                    padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:700,
+                    border:`1px solid ${col}44`
+                }}>
+                    sil {sil.toFixed(3)}
+                </span>
+            );
+        };
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 메인 애플리케이션 컴포넌트
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         function SpotifyMoodApp() {
             const [step, setStep] = useState(0);
             const [mood, setMood] = useState(null);
@@ -154,110 +238,187 @@
             const [zPrefs, setZPrefs] = useState({});
             const [playlist, setPlaylist] = useState([]);
             const [nowPlaying, setNowPlaying] = useState(0);
+            const [fade, setFade] = useState(true);
+            const [progress, setProgress] = useState(0);
             const [playing, setPlaying] = useState(false);
+            const timerRef = useRef(null);
 
             const meta = mood ? MOOD_META[mood] : null;
-            const color = meta?.color || "#1DB954";
+            const mData = mood ? MOOD_DATA[mood] : null;
+            const clData = (mood && clusterId !== null) ? MOOD_DATA[mood].clusters[clusterId] : null;
+            const color = meta?.accent || "#1ED760";
 
-            const handleMood = (m) => { setMood(m); setZPrefs({}); setCId(null); setStep(1); };
-            const handleCluster = (id) => { setCId(id); setStep(2); };
-            const handleBuild = () => {
-                const pl = buildPlaylist(mood, clusterId, zPrefs);
-                setPlaylist(pl); setNowPlaying(0); setPlaying(true); setStep(4);
+            const goTo = (s) => {
+                setFade(false);
+                setTimeout(() => { setStep(s); setFade(true); }, 220);
             };
 
+            useEffect(() => {
+                if (step === 4 && playing) {
+                    timerRef.current = setInterval(() => {
+                        setProgress(p => {
+                            if (p >= 100) {
+                                setNowPlaying(n => (n + 1) % Math.max(1, playlist.length));
+                                return 0;
+                            }
+                            return p + 0.5;
+                        });
+                    }, 100);
+                } else {
+                    clearInterval(timerRef.current);
+                    if (step !== 4) setProgress(0);
+                }
+                return () => clearInterval(timerRef.current);
+            }, [step, playing, playlist.length]);
+
+            const handleMood = (m) => { handleMoodAction(m); };
+            const handleMoodAction = (m) => { setMood(m); setZPrefs({}); setCId(null); goTo(1); };
+            const handleCluster = (id) => { setCId(id); goTo(2); };
+            const handleBuild = () => {
+                const pl = buildPlaylist(mood, clusterId, zPrefs);
+                setPlaylist(pl); setNowPlaying(0); setProgress(0); setPlaying(true);
+                goTo(4);
+            };
+            const handleZPref = (feat, val) => { setZPrefs(p => ({ ...p, [feat]: p[feat] === val ? null : val })); };
+            const reset = () => { setMood(null); setCId(null); setZPrefs({}); setPlaying(false); setProgress(0); goTo(0); };
+
+            const bgGradient = meta
+                ? `linear-gradient(180deg, ${meta.accent}44 0%, ${meta.accent}11 30%, #121212 60%)`
+                : "linear-gradient(180deg, #1a1a2e 0%, #121212 40%)";
+
             return (
-                <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 20px" }}>
-                    {/* 상단 헤더 */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 40, borderBottom: "1px solid #EEE", paddingBottom: 20 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <SpotifyLogo />
-                            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900 }}>Mood System</h2>
-                        </div>
-                        {step > 0 && <button onClick={() => setStep(0)} style={{ background: "none", border: "1px solid #DDD", padding: "8px 16px", borderRadius: 20, cursor: "pointer" }}>처음으로</button>}
-                    </div>
+                <div style={{ minHeight: "100vh", position: "relative", overflowX: "hidden" }}>
+                    <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: "60vh", background: bgGradient, transition: "background 0.8s ease", pointerEvents: "none", zIndex: 0 }} />
+                    <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.03, backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=\"0 0 256 256\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cfilter id=\"n\"%3E%3CfeTurbulence type=\"fractalNoise\" baseFrequency=\"0.9\" numOctaves=\"4\"/%3E%3C/filter%3E%3Crect width=\"100%25\" height=\"100%25\" filter=\"url(%23n)\"/%3E%3C/svg%3E')" }} />
 
-                    {/* 스텝 0: 무드 선택 */}
-                    {step === 0 && (
-                        <div>
-                            <h1 style={{ fontSize: 32, marginBottom: 10 }}>지금 기분이 어때요?</h1>
-                            <p style={{ color: "#666", marginBottom: 30 }}>원하는 분위기를 선택하면 분석된 결에 맞춰 추천해 드릴게요.</p>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
-                                {Object.entries(MOOD_META).map(([m, mt]) => (
-                                    <button key={m} onClick={() => handleMood(m)} style={{ 
-                                        background: "#FFF", border: "1px solid #EEE", borderRadius: 16, padding: "24px", 
-                                        textAlign: "left", cursor: "pointer", transition: "all 0.2s",
-                                        boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
-                                    }}>
-                                        <div style={{ fontSize: 32, marginBottom: 10 }}>{mt.emoji}</div>
-                                        <div style={{ fontSize: 18, fontWeight: 700, color: mt.color }}>{m}</div>
-                                        <p style={{ color: "#888", fontSize: 14 }}>{mt.desc}</p>
-                                    </button>
-                                ))}
+                    <div style={{ position: "relative", zIndex: 1, maxWidth: 960, margin: "0 auto", padding: "0 24px 80px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 0 32px", borderBottom: "1px solid #ffffff0a", marginBottom: 8 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                <div style={{ color: "#1ED760" }}><SpotifyLogo /></div>
+                                <div>
+                                    <div style={{ fontSize: 11, color: "#B3B3B3", letterSpacing: 4, textTransform: "uppercase", fontWeight: 700 }}>Ensemble Project</div>
+                                    <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1 }}>무드 플리 생성 시스템</div>
+                                </div>
                             </div>
+                            {step > 0 && <button onClick={reset} style={{ background: "transparent", border: "1px solid #535353", color: "#B3B3B3", padding: "8px 18px", borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>처음으로</button>}
                         </div>
-                    )}
 
-                    {/* 스텝 1: 군집 선택 */}
-                    {step === 1 && (
-                        <div>
-                            <h2 style={{ fontSize: 28, color: color }}>{meta.emoji} {mood.toUpperCase()}</h2>
-                            <p style={{ marginBottom: 30 }}>KMeans로 분석된 3가지 음악 스타일 중 하나를 골라보세요.</p>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-                                {MOOD_DATA[mood].clusters.map(cl => (
-                                    <button key={cl.id} onClick={() => handleCluster(cl.id)} style={{ background: "#FFF", border: "2px solid #EEE", borderRadius: 16, padding: "20px", textAlign: "left", cursor: "pointer" }}>
-                                        <h3 style={{ margin: "0 0 8px", color: color }}>{cl.label}</h3>
-                                        <p style={{ fontSize: 12, color: "#666" }}>{cl.desc}</p>
-                                        <div style={{ borderTop: "1px solid #EEE", paddingTop: 10 }}>
-                                            {cl.top3.map(([n], i) => <div key={i} style={{ fontSize: 11, color: "#999" }}>• {n}</div>)}
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                        {step < 4 && <div style={{ paddingTop: 32 }}><StepBar step={step} color={color} /></div>}
 
-                    {/* 스텝 2: 취향 세분화 */}
-                    {step === 2 && (
-                        <div style={{ textAlign: "center", maxWidth: 400, margin: "0 auto" }}>
-                            <h2>세밀한 취향 조정</h2>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 16, margin: "30px 0" }}>
-                                {ZSCORE_Q[mood].map(q => (
-                                    <div key={q.feat} style={{ background: "#F9F9F9", padding: "20px", borderRadius: 12 }}>
-                                        <p style={{ fontWeight: 700, marginBottom: 12 }}>{FEATURE_LABEL[q.feat]} 정도</p>
-                                        <div style={{ display: "flex", gap: 8 }}>
-                                            <button onClick={() => handleZPref(q.feat, "hi")} style={{ flex: 1, padding: "10px", background: zPrefs[q.feat]==="hi"?color:"#FFF", color: zPrefs[q.feat]==="hi"?"#FFF":"#000", border: "1px solid #DDD", borderRadius: 8 }}>{q.hi}</button>
-                                            <button onClick={() => handleZPref(q.feat, "lo")} style={{ flex: 1, padding: "10px", background: zPrefs[q.feat]==="lo"?color:"#FFF", color: zPrefs[q.feat]==="lo"?"#FFF":"#000", border: "1px solid #DDD", borderRadius: 8 }}>{q.lo}</button>
-                                        </div>
+                        <div style={{ opacity: fade ? 1 : 0, transition: "opacity 0.22s ease", minHeight: 400 }}>
+                            {step === 0 && (
+                                <div>
+                                    <div style={{ marginBottom: 40 }}>
+                                        <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1.5, marginBottom: 8 }}>지금 어떤 기분이야?</h1>
+                                        <p style={{ fontSize: 14, color: "#B3B3B3", maxWidth: 480 }}>무드를 선택하면 KMeans 군집화 결과로 3가지 음악적 결을 찾아줄게</p>
                                     </div>
-                                ))}
-                            </div>
-                            <button onClick={handleBuild} style={{ width: "100%", padding: "16px", background: color, color: "#FFF", border: "none", borderRadius: 40, fontWeight: 700, cursor: "pointer", fontSize: 16 }}>플레이리스트 만들기</button>
-                        </div>
-                    )}
+                                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+                                        {Object.entries(MOOD_META).map(([m, mt]) => (
+                                            <button key={m} onClick={() => handleMood(m)} style={{ background: "#181818", border: "1px solid #282828", borderRadius: 8, padding: "20px", cursor: "pointer", textAlign: "left", color: "#FFF", position: "relative", overflow: "hidden" }}>
+                                                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${mt.accent},${mt.color})`, borderRadius: "8px 8px 0 0" }} />
+                                                <div style={{ fontSize: 28, marginBottom: 10 }}>{mt.emoji}</div>
+                                                <div style={{ fontSize: 18, fontWeight: 800, color: mt.color, marginBottom: 4 }}>{m}</div>
+                                                <div style={{ fontSize: 12, color: "#B3B3B3", marginBottom: 12 }}>{mt.desc}</div>
+                                                <div style={{ display: "flex", gap: 8, alignItems: "center", borderTop: "1px solid #282828", paddingTop: 12 }}>
+                                                    <span style={{ fontSize: 11, color: "#535353" }}>{MOOD_DATA[m].total.toLocaleString()}곡</span>
+                                                    <SilBadge sil={MOOD_DATA[m].sil} />
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
-                    {/* 스텝 4: 결과 화면 */}
-                    {step === 4 && (
-                        <div>
-                            <div style={{ background: color, color: "#FFF", padding: "30px", borderRadius: 20, marginBottom: 20 }}>
-                                <h2 style={{ margin: 0 }}>{mood.toUpperCase()} Playlist</h2>
-                                <p style={{ opacity: 0.8 }}>{playlist.length}곡이 준비되었습니다.</p>
-                                <button onClick={() => setPlaying(!playing)} style={{ background: "#FFF", color: color, border: "none", padding: "12px 24px", borderRadius: 30, fontWeight: 900, marginTop: 10 }}>{playing ? "일시정지" : "재생 시작"}</button>
-                            </div>
-                            <div style={{ border: "1px solid #EEE", borderRadius: 16, overflow: "hidden" }}>
-                                {playlist.map((s, i) => (
-                                    <div key={i} onClick={() => { setNowPlaying(i); setPlaying(true); }} style={{ padding: "12px 20px", borderBottom: "1px solid #F5F5F5", display: "grid", gridTemplateColumns: "30px 1fr 60px", alignItems: "center", cursor: "pointer", background: i === nowPlaying ? "#F0FFF0" : "#FFF" }}>
-                                        <span style={{ color: i === nowPlaying ? color : "#CCC", fontWeight: 700 }}>{i + 1}</span>
+                            {step === 1 && mood && (
+                                <div>
+                                    <div style={{ marginBottom: 32 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                                            <span style={{ fontSize: 28 }}>{meta.emoji}</span>
+                                            <h2 style={{ fontSize: 28, fontWeight: 900, color: color, margin: 0 }}>{mood}</h2>
+                                            <SilBadge sil={mData.sil} />
+                                        </div>
+                                        <p style={{ fontSize: 14, color: "#B3B3B3" }}>KMeans k=3으로 나뉜 3가지 결 중 취향에 맞는 걸 골라봐</p>
+                                    </div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                                        {mData.clusters.map(cl => (
+                                            <button key={cl.id} onClick={() => handleCluster(cl.id)} style={{ background: "#181818", border: "1px solid #282828", borderRadius: 8, padding: "20px", cursor: "pointer", textAlign: "left", color: "#FFF" }}>
+                                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+                                                    <div style={{ width: 36, height: 36, borderRadius: 8, background: `${color}22`, color: color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>C{cl.id}</div>
+                                                    <SilBadge sil={cl.sil} />
+                                                </div>
+                                                <div style={{ fontSize: 15, fontWeight: 800, color: color, marginBottom: 4 }}>{cl.label}</div>
+                                                <div style={{ fontSize: 12, color: "#B3B3B3", marginBottom: 16 }}>{cl.desc}</div>
+                                                {BAR_FEATURES.map(f => <FeatureBar key={f} feat={f} value={cl.means[f]} color={color} />)}
+                                                <div style={{ borderTop: "1px solid #282828", paddingTop: 12, marginTop: 12 }}>
+                                                    {cl.top3.map(([name, art], i) => (
+                                                        <div key={i} style={{ fontSize: 11, color: i === 0 ? "#FFF" : "#B3B3B3", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                            {i === 0 ? "★ " : "- "}{name}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 2 && mood && clData && (
+                                <div style={{ maxWidth: 560, margin: "0 auto" }}>
+                                    <div style={{ marginBottom: 32, textAlign: "center" }}>
+                                        <div style={{ fontSize: 28, marginBottom: 8 }}>{meta.emoji}</div>
+                                        <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 8 }}>취향을 더 알려줘</h2>
+                                        <p style={{ fontSize: 13, color: "#B3B3B3" }}><strong style={{ color: color }}>{clData.label}</strong> 안에서 더 세밀하게 골라볼게</p>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 32 }}>
+                                        {(ZSCORE_Q[mood] || []).map((q, qi) => (
+                                            <div key={q.feat} style={{ background: "#181818", border: "1px solid #282828", borderRadius: 8, padding: "20px" }}>
+                                                <div style={{ fontSize: 11, color: "#535353", fontWeight: 700, textTransform: "uppercase", marginBottom: 12 }}>Q{qi + 1}. {FEATURE_LABEL[q.feat]} 선호</div>
+                                                <div style={{ display: "flex", gap: 10 }}>
+                                                    {[{ v: "hi", label: q.hi }, { v: "lo", label: q.lo }].map(opt => (
+                                                        <button key={opt.v} onClick={() => handleZPref(q.feat, opt.v)} style={{ flex: 1, padding: "14px 12px", borderRadius: 8, cursor: "pointer", background: zPrefs[q.feat] === opt.v ? `${color}22` : "#282828", border: zPrefs[q.feat] === opt.v ? `2px solid ${color}` : "2px solid transparent", color: zPrefs[q.feat] === opt.v ? color : "#B3B3B3", fontWeight: 600 }}>{opt.label}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button onClick={handleBuild} style={{ width: "100%", padding: "18px", borderRadius: 50, border: "none", background: `linear-gradient(135deg,${color},${meta.color})`, color: "#000", fontSize: 15, fontWeight: 900, cursor: "pointer", boxShadow: `0 8px 32px ${color}44` }}>🎵 플리 생성하기</button>
+                                </div>
+                            )}
+
+                            {step === 4 && playlist.length > 0 && (
+                                <div>
+                                    <div style={{ display: "flex", alignItems: "flex-end", gap: 24, marginBottom: 32, padding: "24px", background: `linear-gradient(180deg,${color}44,${color}11)`, borderRadius: 12 }}>
+                                        <div style={{ width: 120, height: 120, borderRadius: 8, background: `linear-gradient(135deg,${color},${meta.color})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, boxShadow: `0 16px 48px ${color}44` }}>{meta.emoji}</div>
                                         <div>
-                                            <div style={{ fontWeight: 700, color: i === nowPlaying ? color : "#000" }}>{s.track_name}</div>
-                                            <div style={{ fontSize: 12, color: "#999" }}>{s.artists}</div>
+                                            <h2 style={{ fontSize: 28, fontWeight: 900, margin: "0 0 8px" }}>{mood?.toUpperCase()} — {clData?.label}</h2>
+                                            <div style={{ fontSize: 12, color: "#B3B3B3" }}>{playlist.length}곡 · KMeans 군집 C{clusterId} · TSP 정렬 완료</div>
                                         </div>
-                                        <div style={{ textAlign: "right", fontSize: 11, color: "#CCC" }}>{s.popularity} pop</div>
                                     </div>
-                                ))}
-                            </div>
+                                    <div style={{ background: "#181818", border: "1px solid #282828", borderRadius: 12, padding: "20px 24px", marginBottom: 24 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+                                            <button onClick={() => setPlaying(!playing)} style={{ width: 52, height: 52, borderRadius: "50%", border: "none", background: color, cursor: "pointer", fontSize: 20 }}>{playing ? "⏸" : "▶"}</button>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: 14, fontWeight: 700 }}>{playlist[nowPlaying]?.track_name}</div>
+                                                <div style={{ fontSize: 12, color: "#B3B3B3" }}>{playlist[nowPlaying]?.artists}</div>
+                                            </div>
+                                        </div>
+                                        <div style={{ background: "#282828", borderRadius: 3, height: 4, overflow: "hidden" }}>
+                                            <div style={{ width: `${progress}%`, height: "100%", background: color, transition: "width 0.1s linear" }} />
+                                        </div>
+                                    </div>
+                                    <div style={{ background: "#181818", border: "1px solid #282828", borderRadius: 12, overflow: "hidden" }}>
+                                        {playlist.map((song, i) => (
+                                            <div key={i} onClick={() => { setNowPlaying(i); setProgress(0); setPlaying(true); }} style={{ display: "grid", gridTemplateColumns: "36px 1fr 80px", gap: 12, padding: "10px 16px", background: i === nowPlaying ? `${color}11` : "transparent", cursor: "pointer", borderLeft: i === nowPlaying ? `3px solid ${color}` : "3px solid transparent", alignItems: "center" }}>
+                                                <div style={{ fontSize: 12, color: i === nowPlaying ? color : "#535353", textAlign: "center" }}>{i + 1}</div>
+                                                <div style={{ fontSize: 13, color: i === nowPlaying ? color : "#FFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.track_name} <span style={{ fontSize: 11, color: "#B3B3B3", marginLeft: 8 }}>{song.artists}</span></div>
+                                                <div style={{ textAlign: "right", fontSize: 11, color: "#535353" }}>{song.popularity} pop</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             );
         }
