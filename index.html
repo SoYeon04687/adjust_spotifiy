@@ -117,8 +117,8 @@
                 <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 20px" }}>
                     {step === -1 && (
                         <div className="splash-screen">
-                            <h2 style={{ fontSize: "3rem", fontWeight: 900, margin: 0 }}>오늘의 색,</h2>
-                            <h2 style={{ fontSize: "3rem", fontWeight: 900, margin: 0 }}>오늘의 플레이리스트</h2>
+                            <h2 style={{ fontSize: "3rem", fontWeight: 900, margin: 0 }}>오늘의 MOOD,</h2>
+                            <h2 style={{ fontSize: "3rem", fontWeight: 900, margin: 0 }}>오늘의 Playlist</h2>
                         </div>
                     )}
                     {step >= 0 && (
@@ -168,7 +168,7 @@
                             {step === 2 && (
                                 <div style={{textAlign:"center", padding:"40px 0"}}>
                                     <h1 style={{fontSize:28, fontWeight:900, marginBottom:10}}>조금 더 취향을 좁혀볼까요?</h1>
-                                    <p style={{color:"#666666", marginBottom:40}}>당신에 대해 더 알고 싶어요 ([{FEAT_LABEL[CLUSTER_FEATURE[mood][clusterId]]}] 기준)</p>
+                                    <p style={{color:"#666666", marginBottom:40}}>당신에 대해 더 알고 싶어요</p>
                                     <div style={{display:"flex", flexDirection:"column", gap:12, maxWidth:400, margin:"0 auto"}}>
                                         <button className="option-btn" onClick={() => { setFeatVal('hi'); setStep(3); }}>{FEAT_Q[CLUSTER_FEATURE[mood][clusterId]].hi}</button>
                                         <button className="option-btn" onClick={() => { setFeatVal('lo'); setStep(3); }}>{FEAT_Q[CLUSTER_FEATURE[mood][clusterId]].lo}</button>
