@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Mood - Ensemble Project</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&family=Nunito:wght@700;900&family=Plus+Jakarta+Sans:wght@300;400;600&family=Outfit:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin:0; padding:0; background:#F0EAE7; color:#131313; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; min-height:100vh; }
+        button { cursor:pointer; border:none; transition:all 0.2s; background:none; }
+
+        /* ── 뒤로 버튼 ── */
+        .back-btn { color:#666; border:1px solid #ccc; padding:8px 18px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:28px; display:inline-block; }
+        .back-btn:hover { color:#131313; border-color:#131313; }
+
+        /* ── 스플래시 ── */
+        .splash { display:flex; flex-direction:column; align-items:center; justify-content:center; height:70vh; animation:fadeSplash 2s ease-in-out forwards; }
+        @keyframes fadeSplash { 0%{opacity:0;transform:translateY(10px)} 20%{opacity:1;transform:translateY(0)} 80%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-10px)} }
+
+        /* ── 무드 카드 ── */
+        .mood-grid { display:flex; flex-direction:column; align-items:center; gap:20px; }
+        .mood-row  { display:flex; gap:18px; justify-content:center; }
+        .mood-card { width:155px; height:155px; border-radius:30px; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; box-shadow:0 8px 24px rgba(0,0,0,0.13); }
+        .mood-card::before { content:''; position:absolute; inset:0; background:rgba(255,255,255,0.4); opacity:0; transition:opacity 0.15s; }
+        .mood-card:hover { transform:translateY(-6px) scale(1.05); box-shadow:0 18px 40px rgba(0,0,0,0.22); }
+        .mood-card:hover::before { opacity:1; }
+        .mood-card img { width:40px; height:40px; object-fit:contain; pointer-events:none; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.2)); position:relative; z-index:1; }
+
+        /* ── 군집 카드 ── */
+        .cluster-card { background:#fff; border:2px solid #E5DED9; border-radius:20px; padding:22px 18px 20px; display:flex; flex-direction:column; gap:12px; text-align:left; width:100%; overflow:visible; }
+        .cluster-card:hover { transform:translateY(-5px); }
+
+        /* ── 해시태그 한 줄 ── */
+        .tag-row { display:flex; gap:6px; flex-wrap:nowrap; overflow:hidden; }
+        .hashtag { font-size:13px; font-weight:800; white-space:nowrap; }
+
+        /* ── 피처 바 ── */
+        .feat-bars { display:flex; flex-direction:column; gap:6px; }
+        .feat-row  { display:flex; flex-direction:column; gap:2px; }
+        .feat-head { display:flex; justify-content:space-between; font-size:11px; }
+        .feat-name { font-weight:700; color:#999; }
+        .feat-val  { font-weight:800; }
+        .feat-bg   { height:4px; border-radius:4px; background:#EBEBEB; overflow:hidden; }
+        .feat-fill { height:100%; border-radius:4px; }
+
+        /* ── 로고 ── */
+        .logo-wrap { display:flex; align-items:center; gap:14px; }
+        .circles-icon { position:relative; width:80px; height:56px; flex-shrink:0; }
+        .ci { position:absolute; width:46px; height:46px; border-radius:50%; }
+        .ci1 { left:0; top:5px; background:linear-gradient(135deg,#f093fb,#c471ed); opacity:.85; animation:ml 4s ease-in-out infinite; }
+        .ci2 { left:18px; top:5px; background:linear-gradient(135deg,#c471ed,#9f7aea); opacity:.6; animation:mc 4s ease-in-out infinite; }
+        .ci3 { left:36px; top:5px; background:linear-gradient(135deg,#9f7aea,#667eea); opacity:.5; animation:mr 4s ease-in-out infinite; }
+        @keyframes ml{0%,15%{transform:translateX(0);opacity:.85}55%,70%{transform:translateX(18px);opacity:.5}100%{transform:translateX(0);opacity:.85}}
+        @keyframes mc{0%,15%{opacity:.6}55%,70%{opacity:.75}100%{opacity:.6}}
+        @keyframes mr{0%,15%{transform:translateX(0);opacity:.5}55%,70%{transform:translateX(-18px);opacity:.45}100%{transform:translateX(0);opacity:.5}}
+        .logo-text { display:flex; flex-direction:column; gap:0px; }
+        .logo-name { font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; font-size:26px; letter-spacing:.02em; color:#1a1a1a; line-height:1.1; }
+        .logo-sub  { font-family:'Plus Jakarta Sans',sans-serif; font-weight:300; font-size:10px; letter-spacing:.45em; text-transform:uppercase; color:#aaa; margin-top:3px; }
+
+        /* ── 중앙 정렬 화면 (취향·시드) ── */
+        .center-screen { display:flex; flex-direction:column; align-items:center; text-align:center; padding:20px 0 60px; }
+        .center-title  { font-family:'DM Sans',sans-serif; font-size:clamp(24px,3.5vw,36px); font-weight:900; color:#131313; margin:0 0 10px; line-height:1.25; letter-spacing:-0.3px; }
+        .center-sub    { color:#999; font-size:14px; margin:0 0 44px; }
+        .center-opts   { display:flex; flex-direction:column; gap:12px; width:100%; max-width:460px; }
+
+        /* ── 취향 선택 버튼 ── */
+        .q-btn { border:1.5px solid #DDD; border-radius:16px; padding:20px 24px; color:#131313; font-size:15px; font-weight:600; text-align:left; background:#fff; display:flex; align-items:center; gap:14px; }
+        .q-btn:hover { transform:translateX(4px); }
+        .q-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:900; flex-shrink:0; }
+
+        /* ── 시드 버튼 ── */
+        .seed-btn { border:1.5px solid #DDD; border-radius:16px; padding:22px 24px; background:#fff; display:flex; flex-direction:column; gap:4px; text-align:left; width:100%; }
+        .seed-btn:hover { transform:translateX(4px); }
+        .seed-label  { font-size:16px; font-weight:700; letter-spacing:0; text-transform:none; }
+        .seed-name   { font-size:14px; font-weight:600; margin-top:8px; color:#555; }
+        .seed-artist { font-size:13px; color:#999; margin-top:2px; }
+
+        /* ── 플레이리스트 (퍼플 고정) ── */
+        .pl-bar-bg   { background:#EBEBEB; height:5px; border-radius:5px; overflow:hidden; }
+        .pl-bar-fill { height:100%; border-radius:5px; background:linear-gradient(90deg,#9f7aea88,#9f7aea); }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+/* ══ 데이터 ══ */
+const MOOD_DATA = {"chill":{"clusters":[{"id":0,"tags":["#차분한","#몽환적인","#명상같은"],"top3":[["Eternal Youth","RŮDE","0ytvsZOerGzUWfHXVT2Sgy"],["i'm closing my eyes","potsu","3NsuucK8qXpIJf7KPZX7vq"],["Controlla","Idealism","1FlY15vdP570PJucy6JdYm"],["A Moment Apart","ODESZA","59wlTaYOL5tDUgXnbBQ3my"],["Mirage","Orion Sun","1w327AHTCoChRIkJUprAnV"],["5:32pm","The Deli","7qrBYrivpvfXUPBMmqh3dA"],["Affection","Jinsang","7MdZQXUBijQxcBkYz4G1Z5"],["Sun Models","ODESZA","7jZHUhAmW5oq1cq6s8IxmK"],["Sleep Apnea","Beach Fossils","6XyjwF7CAwuEaW77noJr6I"],["Tender love","Mounika.;Ocie Elliott","1CM16VHSXw4CcvZUPsa8CU"],["Shou Ga Nai","Raimu","1BbsV7AEuhmKRqhloDVtvt"],["Better Days","LAKEY INSPIRED","36nutPAJFggPeddyVWDFm9"],["Introvert","Tenno","798zLqTKxt9IzOjl3oF3KL"],["just friends","potsu","5Mn3siu0XehRb9kTEPqotX"],["Grace","Tenno","2iUMkAjSOs1r8CsrY4G8CQ"],["French Inhale","[bsd.u]","4JLI9AgtAXutJvjlXgZBoR"],["Tabibito","Tenno","4JLOUQ6885YFhUBAoCE6dL"],["Blank Canvas","BluntOne","1HxqiXTBlDUlzWBBvAt4bT"],["Counting Rice","Raimu","4Q2pNhiQ5KtzuXd0GIbRiz"],["i'm in love with u","j'san","5p684vIzF5LOkmHL3I0tyM"]],"means":{"danceability":0.63,"energy":0.32,"valence":0.27,"tempo":109.25,"acousticness":0.69,"instrumentalness":0.84}},{"id":1,"tags":["#감성적인","#아늑한","#이지리스닝"],"top3":[["Another Love","Tom Odell","3JvKfv6T31zO0ini8iNItO"],["double take","dhruv","0QzuaeCEEOV40Pn7IvKEny"],["Happier Than Ever","ASTN","7es56D0QedGMsK39wl2yFX"],["Collide","Justine Skye;Tyga","22I3h5AOENlH4CqXJsEbFR"],["Falling for U","Peachy!;mxmtoon","2xhGZ3WzOa3tir28y7Cb88"],["Heal","Tom Odell","4KlL5Bwlm4yHYxr0B2rHci"],["Again","Shiloh Dynasty;Timmies","5e2l2ZAMwHmrkdM4Z6NhAR"],["The Loser","Verzache","0yTGQpPOgcsS8Xqp5bQO58"],["drunk","keshi","6D6HVKe7Qu3imn4zzJD0W9"],["Honesty","Pink Sweat$","19gCnDoMbugHhF7eMpLpe1"],["My Favourite Clothes","RINI","2ZwIO3ufWLFYxtEoam9ydu"],["Best Day Of My Life","Tom Odell","6rUtMKEej81ORTGtCpjyOJ"],["skeletons","keshi","2BuJrxYKhYky20dQqTlobO"],["i swear i'll never leave","keshi","5byXSKd7QOHtVMOiptklBD"],["3:00 AM","Finding Hope","5HsSsEeP3hU9QSfHZrzbtA"],["Weak","Larissa Lambert","3UnfOb5hmnf4KF7NIgAj9a"],["universe","thuy","7B4UxdHwRKJYRhvXxmgZhM"],["Shouldn't Be","Luke Chiang","7F6PtLP6fJPVtA1FWVkl8K"],["Collide Sped Up","Justine Skye;Tyga","1r6qzxz77Tvbrvqd1Q1MIN"],["double take 2","dhruv","47isJpIIO8m7BJEhiFhnaf"]],"means":{"danceability":0.58,"energy":0.37,"valence":0.29,"tempo":111.7,"acousticness":0.65,"instrumentalness":0.03}},{"id":2,"tags":["#잔잔한신남","#감각적인","#여유로운"],"top3":[["NVMD","Denise Julia","7ArVzlFsFsQXNseVXmdOyk"],["At My Worst","Pink Sweat$","2MJz8BxxMsERULatmBikDH"],["Another Love Tiësto","Tom Odell;Tiësto","4Et6tUEO7biKxZEfJXpNj1"],["beside you","keshi","1Fhb9iJPufNMZSwupsXiRe"],["like i need u","keshi","7ivYWXqrPLs66YwakDuSim"],["Alone With You","Arz","0W7brFokN6QtGRNp32RCQP"],["2 soon","keshi","5SlU0Yhi51jobhEiGE4xDv"],["The Last Goodbye","ODESZA;Bettye LaVette","4XeIiGpUBshIfs9yrBDVZC"],["Two Weeks","Grizzly Bear","0iTpQYzJnYgh7kIxyq8A2O"],["Resonance","Home","65r94rVdiMwqXyQFEr3tqT"],["colorblind","Mokita","4o3XxiQ9BljY4OU38zanC0"],["Strawberry Skies","Kid Travis","458EaCXcB9TRBoJEDVcdcr"],["SOMEBODY","keshi","3iqlzKw1tLt6tXZyKWV0fZ"],["tonight","demxntia","0OrwGH9aeguhopTVubv0VZ"],["Champagne Shots","Sainte","7dbyaRWWFvB9UG2vcwTd3J"],["Latest Trends","A1 x J1","7pnQ23WgZca9jEfMts9qsR"],["Coming for You","SwitchOTR","1xIqDFx3KdByBnKMlTECcM"],["Night Away","A1 x J1","7z5G2LOdV8okZn4yWg3q5g"],["4am","JBee","3jTWd38NseaNnSuIK2Ybsp"],["Next Up","JBee","5wwPdWKbDEiybmWkZqsGGn"]],"means":{"danceability":0.72,"energy":0.56,"valence":0.55,"tempo":122.37,"acousticness":0.3,"instrumentalness":0.05}}]},"happy":{"clusters":[{"id":0,"tags":["#신나는","#활기찬","#경쾌한"],"top3":[["Wanna Play?","The Prophet","6iBL6TOzsO75Yz0cG1MO0o"],["Dreams","2 Brothers On The 4th Floor","4Fqm5rqB0WMx0hPOwgRjFr"],["How Much Is The Fish?","Scooter","31JhTEAWmmhZIZTm40pQZr"],["Never Alone","2 Brothers On The 4th Floor","4cqiLvFRDuV8ClE61eMmZx"],["I Like It Loud","Marshall Masters","7hjbOIcQnULsxDoS2CPmdQ"],["Fiyaaah!","The Prophet","1gWAtvmMbhH6WPLes1swNh"],["R4v3 B0y","S3RL;Krystal","1hle6BL2dCurJdd5Xoywlb"],["NGMF","Gammer;Riot Ten","2iOz9TpTJgR3ZBIQ0Pas2g"],["Genre Police","S3RL;Lexi","75HNAIaFJmDUUU6LiNSvnh"],["Candy","S3RL;Sara","1cR9LGmGkWEMslj4gjJanZ"],["Wanna Play","The Prophet","3IQUJpq6mibIBNqADClb9C"],["Gabbersaurus","Hakkuhbar","5Ux35kbZec0DOJXLOUGRNn"],["s Nachts Na Tweëen","Lawineboys","1SnTsx62GbULJpi4iVg9iE"],["All That I Need","S3RL","3jS6gkxBHMO0J3aZiFTsjv"],["Children Of The Night","Nakatomi","1fGqXnx6lkyfCUTORlPYT6"],["Leef Voor t Weekend","PartyfrieX","5FkEhuXoU6xk7x6xtmkG1z"],["Big Mamma","Lawineboys","2AwbeqZqcTrZguAw6H2yrY"],["Wanna Play Terror","The Prophet","2Ur9ianheHtBR4wIWqxEBK"],["Fiyaaah! Dutch","The Prophet","5FkEhuXoU6xk7x6xtmkG1z"],["Na Na Na","Hakkuhbar","5Ux35kbZec0DOJXLOUGRNn"]],"means":{"danceability":0.65,"energy":0.92,"valence":0.54,"tempo":135.97,"acousticness":0.09,"instrumentalness":0.09}},{"id":1,"tags":["#하이텐션","#운동할때","#강렬한"],"top3":[["Us Against The World","Darren Styles","0L0DM33NAe6PjQ1BB4cEjJ"],["Nessaja","Scooter","2zhGnnDewN4kBsVzbqjBtX"],["God Save the Rave","Scooter","6g1VQsGGteeFbJm4IEn3N4"],["Rainbow In The Sky","Paul Elstak","2MlqP1HzhitHfFXPXKumdB"],["Nobody Said","Evil Activities","5qeMz1IZRziSatqOG3ZHz6"],["DYSYLM","Gammer;Darren Styles","4tV6ku4jEYw9L5gZuNpCbP"],["Paul Is Dead","Scooter","09KVvb0849JV9TRFpTiY0l"],["Weekend!","Scooter","483GOX8UcUDXdQiKGFN3JN"],["Pretty Rave Girl","S3RL","3G1SVODcssMmS5YM5G3tun"],["Listen To Your Heart","The Prophet","4LK3fEO1aN4ZJgY3doVU4q"],["You're My Angel","Styles & Breeze","1mCx32u41MITwQIlYTeZ6x"],["Lyra","Korsakoff","5R234KEG9dj0MhKE5grfZV"],["Mtc","S3RL","56nLHj9HJr3xpbLarnr0l4"],["Us Against Tweekaz","Darren Styles","3uJnYKR844kT7MLpm0cquz"],["Turbo","Paul Elstak","0JEePwoX9CcDKFQzleBZzZ"],["Get It Crackin","Re-Style","3HjmdK69N8hal2kZLIx6GS"],["Easy Mix Cut","Evil Activities","6ASkheRUcaSa2TiP8fNPXB"],["Virtual Gaming","Gammer","5BeV0OiC4VQ3TG7ZlNHHsz"],["Hentai","S3RL","6RvTtRyn7zVayLUWAJxd5Z"],["The Logical Song","Scooter","0OpsdOxCH5frtDmBNRQDEF"]],"means":{"danceability":0.49,"energy":0.94,"valence":0.25,"tempo":161.17,"acousticness":0.05,"instrumentalness":0.09}},{"id":2,"tags":["#네온사인","#전자음","#페스티벌감성"],"top3":[["DLMD","Darren Styles","2d9EgBM9F09IkEG8t9T6L8"],["Switch","Darren Styles","059sONalAfYqzIICi4Ti6R"],["Hava Naquila","Party Animals","2ydlXJULx6Q3g7af0un7Bm"],["Nobody Said","Evil Activities","3rUrMlAgJFxVWQhySClFIs"],["Kimimaru","DJ Buzz Fuzz","7kbvMr9iDzYP7KH6apVFSA"],["Da Capo","Perplexer","2wfHc3wJjCeaaB78MlIJ2i"],["My Empty Bottle","Korsakoff","5VxelyYvzdyDBGp50tw1jr"],["Hondo","Flamman & Abraxas","1WEToeRWLqfsufm2ZpMiij"],["Sorrow","Dj Gizmo","6gdH6AUymhzX4uJ2KKWAKn"],["The Darkside","Scooter","47d5lYjbiMy0EdMRV8lRou"],["Verb","Dj Gizmo","2imsVy3dcfibqYBdtKhCFa"],["Poder","Cixx","3PRbWWHsoU1qLKSSVWe7Es"],["Sube","Dj Promo","56BBkFOvo0iS2sHoNVHWoD"],["Don't Touch","Marc Acardipane","46musX0gdikT9TWkzvs6fC"],["Hardcore Vibes","Dune","6yd2M373yAtIg6g7wqLSlT"],["Falta","Dj Promo","5PDUqXNuQQhhRwwA85EjE1"],["Arder","Dj Promo","35i6b4n58J2WS7fgu4jlpK"],["I Come Correct","Promo","3HKcA3RHjWhKOKG37thGZZ"],["Demons","Promo","5qZxa73r5VUTjMW0Eoz96f"],["This Moment","Party Animals","0wz1IRE3GDFCCkgGA9v9vt"]],"means":{"danceability":0.58,"energy":0.85,"valence":0.27,"tempo":153.51,"acousticness":0.04,"instrumentalness":0.72}}]},"romance":{"clusters":[{"id":0,"tags":["#고풍스러운","#낭만적인","#서정적인"],"top3":[["Эти глаза напротив","Valery Obodzinsky","55ft1ayoxCuxeEaUxS0zja"],["Я тебя подожду","Maya Kristalinskaya","5DZWpWVFqeXLLZHoORLLLM"],["Katyusha","Georgi Vinogradov","0Wv643k6s2pxZ6FjWzdo5v"],["Vostochnaja pesnja","Valery Obodzinsky","1byhztoqgQERCSyFTvQsQe"],["14 минут до старта","Vladimir Troshin","5Qp1gwP49eJQtCHIkgmQfN"],["Hava naguila","Ivan Rebroff","6LkiV1Z0Y0aRfpysElluac"],["Aleksandra","Tatiana and Sergey Nikitin","1SMgTWlziD4zVIEX92XDbz"],["Dorogoy dlinnoy","Alexander Vertinsky","4CRp77Sf1fHsFIOp4yhdcu"],["Счастье моё","Georgi Vinogradov","2Bxnegx80xKOmJ2bq14ed6"],["Two Maxims","Georgi Vinogradov","2suhVE7UX0IL9ndj1GgZen"]],"means":{"danceability":0.54,"energy":0.43,"valence":0.63,"tempo":118.12,"acousticness":0.74,"instrumentalness":0.01}},{"id":1,"tags":["#나른한","#감미로운","#잔잔한"],"top3":[["Чистые пруды","Igor Talkov","5mupOjWc7YMaUoQ9SQ6bp5"],["Kalinka, Kalinka","Ivan Rebroff","0k6ahjMeMG9E8cPzSanQhF"],["Нежность","Maya Kristalinskaya","6gBOEgaE31SgL7d6hWzxqO"],["Ayrılıq","Rashid Beibutov","4Vd9TNus4Al9GksXQeL7LR"],["Tango Magnolija","Alexander Vertinsky","1Izwzkicc4P2rEjD5droHU"],["Подмосковные вечера","Vladimir Troshin","6qS2nl4bcj927dQGwMHKVh"],["Течет река Волга","Lyudmila Zykina","214SqfOuNH1DmRYjuIg0UP"],["А на последок","Valentina Ponomaryova","4XSd3gOBb577jSqJbkS0U9"],["Wolgalied","Ivan Rebroff","0oxygOeCTYPgKYTPhaiIVB"],["Kuchalara","Rashid Beibutov","362m7XVWdOU7FsnliFZFHI"]],"means":{"danceability":0.38,"energy":0.22,"valence":0.27,"tempo":105.62,"acousticness":0.94,"instrumentalness":0.02}},{"id":2,"tags":["#영화같은","#환상적인","#우아한"],"top3":[["Katyusha","Ivan Rebroff","4G5fGPFCxdgie2uwpLvRaf"],["До завтра","Vladimir Troshin","5LlhHG57NwQp91aOygFDe4"],["Les bateliers","Ivan Rebroff","3gxVjbqzbomPXyiac6mM3k"],["Dance of the Gypsies","Ivan Rebroff","3mTsjeWMJIYXgDlTGxJsC7"],["Город золотой","Elena Kamburova","4HKFF8kQupjxkx0SKxcPPZ"],["Amazing Grace","Ivan Rebroff","4slCqtSxGmf9P7NGb3EBC6"],["Plaisir D'Amour","Ivan Rebroff","0fh3doIpaDLP4HUen2tzjp"],["Notschenjka","Ivan Rebroff","5VU7XxrQj5gfJmFKyn0Qyv"],["Azerbyjan","Rashid Beibutov","2haLS23gcVIqweqBtW8AUj"],["Eintönig hell","Ivan Rebroff","7i71kcxj4N4NUcdQMeoXOt"]],"means":{"danceability":0.36,"energy":0.29,"valence":0.35,"tempo":103.58,"acousticness":0.92,"instrumentalness":0.5}}]},"sad":{"clusters":[{"id":0,"tags":["#어두운","#거친감성","#밤거리같은"],"top3":[["By the Sword","iamjakehill","3HsFSrIsbO54TFDfG66pZm"],["MARCELINE","Lil God Dan","17zEBtrjKKa2hwk9CxWIkX"],["NUMB","Chri$tian Gate$","1BPBwKueIEMnUcbbs2te7B"],["Feel Like God","gazzzy;framed","0Ck25uqrWpIM3yGPP5lxFW"],["7 Years Remix","Sik World","1kFlDnWmBTvCBxxeGDpIdp"],["Die a King","iamjakehill","1s70cjkrdj9lpEeQQlmS9l"],["Stay","iamjakehill","4Xn89qH8uKOumgvAGSvY3U"],["You Said","Connor Price","2k5rWMAz9RvFS3k3kk3cc5"],["Dead Eyes","Promoting Sounds","7BdlyzVvOqmwPH9dYtZfsx"],["Memory","Promoting Sounds","3UkPmK7Sk0wuLXzVnQihva"]],"means":{"danceability":0.71,"energy":0.62,"valence":0.48,"tempo":125.86,"acousticness":0.18,"instrumentalness":0.01}},{"id":1,"tags":["#쓸쓸한","#처연한","#새벽에듣는"],"top3":[["death bed","Powfu;beabadoobee","7eJMfftS33KTjuF7lTsMCx"],["Living Life In The Night","Cheriimoya","2kx5sQgmjYug0GiDh1a4sU"],["Get You The Moon","Kina;Snøw","4ZLzoOkj0MPWrTLvooIuaa"],["Can We Kiss Forever?","Kina","58wyJLv6yH1La9NIZPl3ne"],["MEMORIES!","347aidan","27XMmSWSOXJ7eVb40tH93T"],["Dead and Cold","SadBoyProlific","33LizV83s7z1gwtmLiKlmv"],["Pain","Josh A","39LJCSHy7nB1akjmhMQ7Y7"],["Dancing in My Room","347aidan","6Pgmqg15yVexuOgtzuxwoX"],["Baby You're Worth It","Kina","75SW8IItf7yy1VejSLtv9W"],["Forever","ilyTOMMY","7uHRKSQ9WIlBBuBY7BHcbq"]],"means":{"danceability":0.68,"energy":0.4,"valence":0.41,"tempo":115.36,"acousticness":0.64,"instrumentalness":0.01}},{"id":2,"tags":["#몽환적인","#공허한","#텅빈느낌"],"top3":[["I'm Only a Fool","Dybbukk","2egLcqqD1fz44PKq28fsKQ"],["Nobody Cares","Kina","4l2soLCGAoYvSKGyqFtsbJ"],["U're Mine","Kina","7cPQWcczApOEcmeFwUG9xj"],["ON TOP","The Girl Next Door","72j1jY006wieT3AdwLdLFl"],["Enim er'u","Dybbukk","1RCoXOLhKNpOdZA2Ay55ah"],["ICE COLD","Letoa","6uF3fb3UxjoVl7Ic781L9N"],["Lonely Nights","ilyTOMMY","0n6Dh4G6Uoq7ZoKeYWu7Rr"],["Pastlives","BRAMANE","3bzgUqMZShKYULCSTDKE3x"],["Let Me Die","Lil Happy Lil Sad","46T7puWlH8ptC6lx7bQ3TY"],["Ghost","Roderick Porter","6VyUWfImAgTrYAnYWonuhM"]],"means":{"danceability":0.66,"energy":0.32,"valence":0.31,"tempo":123.12,"acousticness":0.63,"instrumentalness":0.74}}]},"sleep":{"clusters":[{"id":0,"tags":["#자장가같은","#성스러운","#클래식한"],"top3":[["Endless Sky","Nils August Valentin","0BFGPgLej2COqSzwxKmpkU"],["Delta Sinus Noise","Wiser Noise","7sKPbqAPAP4llKXGEXqCaH"],["Scarborough Fair","Sheku Kanneh-Mason","4wlNPczIullwvmwb4x0ltz"],["Brahms' Lullaby","Bedtime Baby","1nQOgYZWJzYsFdPvt9A7DP"],["A Thousand Years","Laura Sullivan","6IQBnoeLPehnJaE6sKMhVs"],["Loneliness Naruto","Laura Sullivan","0lOj8NkloHAEbGQtk1OlTo"],["Canon In D","Sleep Baby Sleep","0PmKr9UvT9mOyQaCr08Ysc"],["Peaceful Rain","Rain Sounds Collection","4BH2vJE3TPNNksq39IWXLF"],["Good Dreams","Bedtime Baby","0u8SbFXDKB2rRM6MSo7IIh"],["Lugn Musik","Avslappning Sound","595jExEL3ags8HE83n3pg9"]],"means":{"danceability":0.35,"energy":0.19,"valence":0.24,"tempo":112.43,"acousticness":0.92,"instrumentalness":0.41}},{"id":1,"tags":["#편안한","#명상할때","#릴렉스"],"top3":[["Brown Sleep Noise","Sleep Miracle","5UBonaClAZVfzxJNn8nnhh"],["Beautiful Imagination","Little Circuits","5LEHlRPjGcZ5RdagAwXpHS"],["Hush","Yonatan Awate","13CYT9XLC54qtyg0U8aqb7"],["Blanket of White","Sleepy Clouds","2u3TXM5CwRovxFJZID2OuF"],["Blue Sphere","Sea of Waves","3aQ46BOZ8C3fOfSFfyEcwq"],["Liberation","Nova Issue","2S8zzsvlurouRcb7zbJOz1"],["Turndown Service","Adeline Verver","56y8h73SZXnIzR0fGSQlca"],["La Caoba","Sayulita","7zwddyEol0Hg5K8HQd3srX"],["Peaceful Patterns","Hatha Priya","0EGpuh2uzSDi5mnMIvgFui"],["Viento Estelar","Universo","0f5IlhiVWUUq4SGHyrRxIt"]],"means":{"danceability":0.15,"energy":0.11,"valence":0.05,"tempo":92.06,"acousticness":0.91,"instrumentalness":0.84}},{"id":2,"tags":["#백색소음","#집중할때","#공부할때"],"top3":[["Weißes Rauschen","Weißes Rauschen HD","2gdCsrNrQlMj2EFnsMFUHA"],["Womb Heartbeat","Silent Knights","2OkrxnSE2OG0bOGjniOCl6"],["White Noise Rain","Rain Sounds","58CcvO9cDf6ulggV7CylFD"],["Brown Noise For Sleep","Granular","7EbAGbBeU3SRzRnhpfcVHY"],["Rain Loop","Lluvia para Dormir","3hJ503kV7rIGBeW6mQ3HF0"],["Vacuum Cleaner","Sleep Baby Sleep","3s8Wh1vI3CdIoMX7J4uMIg"],["Meeresrauschen","Meeresrauschen","0WFwjcwQekV5FTKpl4idDw"],["White Noise Heartbeat","Silent Knights","12TxYVk874fBhVWQy5NVCX"],["Natural Environment","Natural White Noise","6hjGiP2FY6kdbZT8N86cDc"],["Pulsing Whitenoise","Natural White Noise","17hQN9AG2O10JIobgpWve9"]],"means":{"danceability":0.19,"energy":0.77,"valence":0.02,"tempo":100.44,"acousticness":0.34,"instrumentalness":0.74}}]},"study":{"clusters":[{"id":0,"tags":["#모닝일기","#아침루틴","#이지리스닝"],"top3":[["Morning Stretch","Timothy Infinite","4BfOkMlyoev0VEN5ClXMby"],["Latex","Sail & Weep","2IfYpqvhlKUQ7BcURXGWHo"],["The Sun's Out","Sarah, the Illstrumentalist","6o9mwul55Hxm88JVGCNDCo"],["Come Correct","Sarah, the Illstrumentalist","7e4xPma019GgBJ9akT42sZ"],["Gold Plated","Stratotune","1p0vYiUriWNU5mKQnOFJWI"],["forgotten technology","Samarinen","7aTgiXCztG1kPqqO5SgHAy"],["Nature's Love","Justnormal","55ZUuMlOTxhJiLs3LkIqZH"],["sunday am","SLKBTS","1gr9Risxpt6BfHdu5VxtAx"],["Cruising Avenues","Odd Shapes","3pb6lOqe10g5OXtTyZA3Vb"],["Round on Me","Justnormal","37iYwXkFgvgFcTXBkYkzrz"],["Royal Highness","Beat Oven","7uJKZCjiHRAde6xQm2Kx0Q"],["Cameo","Jazzarama","30OXkzWR9otpCgUpAPrtPA"],["strolling","!nvite","1d4ZvL8uuUPTEAnocC3zEa"],["Backrest","Mama Gecko","4cPAlNvmPCRulfIldis6aL"],["Too Tired","Smartface","30ksReCEcSpnfAm8XCC4G7"],["Happy to See You","Sarah, the Illstrumentalist","2c6Si68uNJOXbWA4gFOo6p"],["Where the Sun Lives","Sarah, the Illstrumentalist","1Q6Yq87dBVj1BYaiOsjKph"],["quarantine blues","willie johns","5OqQA1I96jy9HrawfMBV3a"],["Close is best","Sail & Weep","773YRWgu38if25XiHHabJK"],["undefined","Twinkz","4RzY9ZLhrqDwsbTl69va0t"]],"means":{"danceability":0.7,"energy":0.45,"valence":0.46,"tempo":108.01,"acousticness":0.45,"instrumentalness":0.24}},{"id":1,"tags":["#카페감성","#로파이","#분위기있는"],"top3":[["Distractions","Timothy Infinite","3jNkhv4Hn6MnogaKf6qJMk"],["Shoreditch","Clint Is Quinn","0CQq9NEFcGNi3FMxpMKwj4"],["Skin Tone","Timothy Infinite","0tL9E43q9uXQftXBeZMM8D"],["Neon Tapestries","Dusty Decks","1oQt6kTiuPsQEFaHWFH6Pl"],["Strummer Boy","Dusty Decks","6iEEf0a4KOHbOsbJ4TslLY"],["Youth","Ensidya","0w1Bmnum1Fk0Unjy5Ok2ov"],["wandsworth park","flowtide","4fWFGd70ErhNWIr3B1caod"],["Eskgrow","Moon Ladder","4SMMdkI3aMh08Ntf9DxuCh"],["Low 5","Beatnugget","5pEWbaagNCVwabOEPrEy1m"],["12 Weeks","huglord","2LQvFDHnUiT3D612LHntIN"],["Whispered Winds","Ensidya","2bkaAE4VM6lLeygzWsakdz"],["moog me up","Wibke Komi","0A8jHHS6r4XsCKq1NKLIZQ"],["Seven","Von Von Bon","3UdSY1SgSF60lpYdMbmeXm"],["Chanterelle","Silva Sax","3JSg9IUjqze3mySqLn4HmT"],["A Long Way","Ensidya","0URH3UrDV3zoeCxGCW6UEL"],["neomatter","O k O","5ZOwkvgMAeI0G2USq0cIFQ"],["Stickwithit","Recaps","4oHP5Y5kJXrnNPh6M7iMsn"],["Chapman","Olivier Abeille","16N0uGSoGeW41PrPCEnh8T"],["Views from Yamashita","Nathan Kawanishi","55F8bO2fpwlUyFa4AFPJQa"],["After Surf Sandwich","Breakfast For Brunch","0PMlGvzeLrQ27h8oGyfGMV"]],"means":{"danceability":0.67,"energy":0.32,"valence":0.31,"tempo":108.6,"acousticness":0.72,"instrumentalness":0.86}},{"id":2,"tags":["#그루브있는","#리듬감있는","#잔잔한노동요"],"top3":[["Ritual","Talented Mr Tipsy","6qbe2xJVwt7wwpeocsrVvc"],["r u kiddin me?","Wibke Komi","06K21lIuMVgM5U8DpJTdOK"],["Elastic","4to28","2L2aSrua8ZBRMogFhF6I1Q"],["Common Sunflower","Magn Us","2LWBOPGmgxCI9awFaBN5JL"],["Beat Soup","Beat Oven","2FnpKIYWlU8oPpwlT9049r"],["3 Days in Kadiköy","Matt Large","5XsrMxCmiQsx7zaRn4t3W2"],["Water under the Bridge","Matt Large","2hkWgVbqRizZklKGPInc5x"],["Tokyo Trainspotting","Nathan Kawanishi","1bFNVPttUZyzRxfsJAFkJx"],["Brooklyn","Lazy Leopard","6dtGKLkb3KjWffRKNDfrYu"],["Late Hour","kahlooa station","5ueBL4PSEp7B7TInLXxhFA"],["Night Blue Skies","Midnight Smoothie","69oebUHeibzbgcD1MUsSsl"],["Ditty","Dusty Decks","71WxHp7zJA2MEmc2sqDTpI"],["Show Me How Good","Sarah, the Illstrumentalist","6oXmftIjSNes0BS1s4xHHI"],["Can We Just Vibe?","Talented Mr Tipsy","0wmr45zDNsSMy9cRgddm4E"],["Between The Lines","Wasted Glitter","0xu4nHvp3S4wVFc685Z9EY"],["Chasing the Now","Sarah, the Illstrumentalist","63ypmPFNZJXv4SgTtsPdG3"],["Ramen and Herb","Ferris Ferris","7tSFbpe1KLESU6k3v2eBPA"],["Slipping Mats","Dusty Decks","72wDz8RDKFvffQJhHucHDy"],["Delicious Deeds","Master Haratt","6Ck6Tv3EopH6L33sH2I47y"],["make it right","forever grown","2geKkFPV5LpENULZQxv3wh"]],"means":{"danceability":0.71,"energy":0.53,"valence":0.52,"tempo":117.58,"acousticness":0.27,"instrumentalness":0.85}}]},"party":{"clusters":[{"id":0,"tags":["#홈파티","#유쾌한","#둠칫둠칫"],"top3":[["LEBENSLANG - HBz Remix","Tream;HBz","4FXX4P3dxc1JMBx5wVRJ5N"],["Cupid Shuffle","Cupid","07Tx168RSsUS1HqkDIOZbH"],["Cha Cha Slide","Mr. C","5Sho3kEbYXopoXPhPACqo7"],["Küss die Hand","Die Draufgänger","4bj493XxEOXsILudgVVa0n"],["Mexico","Die Flippers","1qPsr0zgQBZc2w2X0wK0Zl"],["Et jeilste Land","Brings","3mAplvB02mSFTDqvhg6c3V"],["Wennduwie","Fäaschtbänkler","2OYBvW5yGby3vjXX7M6Ncy"],["Round and Round","The Palace Singers","7z4VPtZm9g9dxC83ratUFM"],["I Like To Move It","The Party Cats","3fdyHcPGa639HJixHM699h"],["Drobn aufm Berg","Die jungen Zillertaler","33Un46VhkIKlAwIoqnwfVO"],["Easy Peasy","FiNCH;Leony;VIZE","6bW4olKzz8M2BRYNU1ASUi"],["Partyanimal","Micha von der Rampe","7gzdjkagK3pTVW8jYjcYBF"],["Slippery Fish","Amy Liz","7toIqSTfa9Phsmu2hKwTyx"],["Freeze Dance","BeatBo","1R77CxppnheFfIGNgQ9NF8"],["Choo Choo Train","Patty Shukla","2dIpzVC9RzJIYca6fGcPTT"],["Shake and Move","Patty Shukla","2tZUOYK2y7WNhArsa3oxUn"],["Er war der weißeste","Paveier","5uUwp79o8cqGlQ9MOy9ueU"],["Traumfrau","Fäaschtbänkler","3vkeiCyvQQQ0G55vOOJgQD"],["Wee Willie Winkie","The Jamborees","1SvSE3yezb0cJvv81udL8N"],["Alphabet Song","Cooltime Kids","5ddiqtnKYhGULuJATEAJsM"]],"means":{"danceability":0.74,"energy":0.75,"valence":0.73,"tempo":120.51,"acousticness":0.18,"instrumentalness":0.0}},{"id":1,"tags":["#맥주파티","#저세상텐션","#분위기띄울때"],"top3":[["Layla","DJ Robin;Schürze","3ujiq7yK4Uan5z4876fHLK"],["Hey Baby","DJ Ötzi","0HNXnhNZZtRZFLhP4hfyCP"],["Strobo Pop","Die Atzen;Nena","0xTsllHxzqwYrsPUcruf72"],["Goodbye","le Shuuk;Xillions","0ncgj6yTGzZ4GwX2dbXAKE"],["My Way","Harris & Ford","77YGCnTBB84rj02rcWFPwH"],["Numb","Harris & Ford","16oOcqhWq0jLesfL1ICC74"],["Eskalation","Fäaschtbänkler","3XwYe6G9R5ErLkfM6Hawmm"],["Can't Take My Eyes","DJ Ötzi","6YdYtMJJz6LI27yyAQhXHp"],["Finger weg","Mickie Krause","7GDd5maZp10kjA82B9QICj"],["Suffia","Andi Kiss","7jXI0uNkodrjwcL0Caj2Pk"],["Olivia","Die Zipfelbuben","6weT0OACEb3e4KLQJInf4I"],["Dicht im Flieger","Julian Sommer","6sS77FZh2eJfYBsFUW6hjI"],["Layla English","DJ Robin;Schürze","6Jp404HEXaNS4FD9ZAMub1"],["Just Dance","Empyre One","51ShzPG95eEY7rARzuxehl"],["Hey Baby Bellamy","DJ Ötzi","5g3rL93FXCoTZwP2zr9RE5"],["I Need More Of You","DJ Ötzi","1gk1iCwuu1MXx1H9KXeA6w"],["Eine Liebe","Mallorca Allstars","5kqaW2UxXrcLadZRDxi6z2"],["Hey Eisbären","Sound Convoy","1hDNg43vCjUHSJSzETUHdN"],["Chicken Dance","Dora The Explorer","0j3d9PDB0QDkXijNsl2gLk"],["Layla 3","DJ Robin;Schürze","5ucyKDPjLpYLGadsRO1wSB"]],"means":{"danceability":0.64,"energy":0.92,"valence":0.65,"tempo":135.93,"acousticness":0.05,"instrumentalness":0.0}}]}};
+
+/* ── 고정 퍼플 ── */
+const PURPLE = "#9f7aea";
+const PURPLE_LIGHT = "#ede9ff";
+
+const MOOD_ACCENT = {chill:"#5aaa6a",happy:"#e6a800",romance:"#d95080",sad:"#4a80c8",study:"#7aaa28",party:"#aa40ee",sleep:"#5858c8"};
+const MOOD_STYLE  = {chill:{background:"#f5ebe0"},happy:{background:"linear-gradient(160deg,#ffd94f,#ff9a28)"},romance:{background:"linear-gradient(160deg,#6c1724,#4a0e17)"},sad:{background:"linear-gradient(160deg,#a0b9d2,#506e96)"},sleep:{background:"linear-gradient(160deg,#3c3278,#140f3c)"},study:{background:"linear-gradient(160deg,#8cc8a0,#32825a)"},party:{background:"linear-gradient(160deg,#e678ff,#8c28c8)"}};
+const CLUSTER_FEATURE = {chill:{0:"instrumentalness",1:"danceability",2:"valence"},happy:{0:"valence",1:"danceability",2:"instrumentalness"},romance:{0:"acousticness",1:"energy",2:"instrumentalness"},sad:{0:"acousticness",1:"tempo",2:"instrumentalness"},sleep:{0:"valence",1:"tempo",2:"acousticness"},study:{0:"instrumentalness",1:"danceability",2:"tempo"},party:{0:"tempo",1:"tempo"}};
+const FEAT_LABEL = {danceability:"리듬의 일정함",energy:"에너지",valence:"밝음",tempo:"템포",acousticness:"어쿠스틱",instrumentalness:"악기의 풍부함"};
+const ALL_FEATS  = ["danceability","energy","valence","tempo","acousticness","instrumentalness"];
+const FEAT_Q     = {danceability:{hi:"리드미컬하고 춤추기 좋은 곡",lo:"리듬감이 적고 차분한 곡"},energy:{hi:"에너지가 넘치고 강렬한 곡",lo:"에너지가 낮고 잔잔한 곡"},valence:{hi:"더 밝고 긍정적인 곡",lo:"더 감성적이고 진지한 곡"},tempo:{hi:"템포가 빠른 곡",lo:"템포가 느린 곡"},acousticness:{hi:"어쿠스틱 악기 중심의 곡",lo:"전자음이 섞인 곡"},instrumentalness:{hi:"보컬이 없는 연주 중심 곡",lo:"보컬이 포함된 곡"}};
+
+/* ── 레이더 차트 ── */
+function RadarChart({ means, accent, size=140 }) {
+    const pad=22, inner=size-pad*2;
+    const n=ALL_FEATS.length,cx=size/2,cy=size/2,r=inner*0.42;
+    const maxV={danceability:1,energy:1,valence:1,tempo:200,acousticness:1,instrumentalness:1};
+    const ang=i=>(Math.PI*2*i/n)-Math.PI/2;
+    const pt=(v,i,rad)=>[cx+rad*Math.cos(ang(i))*v,cy+rad*Math.sin(ang(i))*v];
+    const webs=[0.33,0.66,1].map(lv=>ALL_FEATS.map((_,i)=>pt(1,i,r*lv)).map((p,j)=>(j===0?'M':'')+p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')+'Z');
+    const dpts=ALL_FEATS.map((k,i)=>pt(Math.min((means[k]||0)/maxV[k],1),i,r));
+    const dpath=dpts.map((p,j)=>(j===0?'M':'')+p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')+'Z';
+    const gid='rg'+accent.replace('#','');
+    return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} overflow="visible">
+            <defs><radialGradient id={gid} cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor={accent} stopOpacity="0.3"/><stop offset="100%" stopColor={accent} stopOpacity="0.02"/></radialGradient></defs>
+            {webs.map((p,i)=><path key={i} d={p} fill="none" stroke="rgba(0,0,0,0.09)" strokeWidth="0.8"/>)}
+            {ALL_FEATS.map((_,i)=>{const[x,y]=pt(1,i,r);return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(0,0,0,0.07)" strokeWidth="0.8"/>;})}
+            <path d={dpath} fill={`url(#${gid})`} stroke={accent} strokeWidth="2" strokeLinejoin="round"/>
+            {dpts.map((p,i)=><circle key={i} cx={p[0]} cy={p[1]} r="2.5" fill={accent} opacity="0.85"/>)}
+            {ALL_FEATS.map((k,i)=>{const[x,y]=pt(1.5,i,r);return <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="7" fill="#aaa" fontFamily="DM Sans,sans-serif" fontWeight="700">{FEAT_LABEL[k]}</text>;})}
+        </svg>
+    );
+}
+
+/* ── 피처 바 ── */
+function FeatBars({ means, accent }) {
+    const max={danceability:1,energy:1,valence:1,tempo:200,acousticness:1,instrumentalness:1};
+    return (
+        <div className="feat-bars">
+            {ALL_FEATS.map(k=>{
+                const pct=Math.min(((means[k]||0)/max[k])*100,100);
+                return (
+                    <div key={k} className="feat-row">
+                        <div className="feat-head">
+                            <span className="feat-name">{FEAT_LABEL[k]}</span>
+                            <span className="feat-val" style={{color:accent}}>{pct.toFixed(0)}%</span>
+                        </div>
+                        <div className="feat-bg"><div className="feat-fill" style={{width:`${pct}%`,background:`linear-gradient(90deg,${accent}77,${accent})`}}/></div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+/* ══ 메인 앱 ══ */
+function App() {
+    const [step,setStep]=useState(-1);
+    const [mood,setMood]=useState(null);
+    const [clusterId,setCId]=useState(null);
+    const [side,setSide]=useState(null);
+    const [playlist,setPlaylist]=useState([]);
+    const [nowPlaying,setNow]=useState(0);
+    const [hovCard,setHovCard]=useState(null);
+
+    useEffect(()=>{
+        if(step===-1){const t=setTimeout(()=>setStep(0),2000);return()=>clearTimeout(t);}
+    },[step]);
+
+    const accent = mood ? MOOD_ACCENT[mood] : PURPLE;
+    const clusters = mood ? Object.values(MOOD_DATA[mood]) : [];
+    const qFeat = (mood&&clusterId!==null) ? CLUSTER_FEATURE[mood][clusterId] : null;
+
+    /* ── side가 결정된 후 seed 미리보기 (step 3용) ── */
+    let popSeed=["","",""],simSeed=["","",""];
+    if(mood&&clusterId!==null&&side){
+        const cl=Object.values(MOOD_DATA[mood]).find(c=>c.id===clusterId);
+        const hilo=side==='high'?'hi':'lo';
+        const popList=(cl.playlists&&cl.playlists[hilo]&&cl.playlists[hilo].pop)||[];
+        const simList=(cl.playlists&&cl.playlists[hilo]&&cl.playlists[hilo].sim)||[];
+        popSeed=popList[0]||["","",""];
+        simSeed=simList[0]||["","",""];
+    }
+
+    const generatePlaylist=(pref)=>{
+        const cl=Object.values(MOOD_DATA[mood]).find(c=>c.id===clusterId);
+        const hilo=side==='high'?'hi':'lo';
+        /* 신형 구조: playlists[hi|lo][pop|sim] = [[name,artist,id,sim], ...] */
+        const prefKey=pref==='pop'?'pop':'sim';
+        const raw=((cl.playlists&&cl.playlists[hilo]&&cl.playlists[hilo][prefKey])||[])
+            .map(t=>({track_name:t[0],artists:t[1],track_id:t[2],similarity:t[3]??100}));
+        if(raw.length===0){setPlaylist([]);setNow(0);setStep(4);return;}
+        const seed={...raw[0],similarity:100};
+        const pool=raw.slice(1);
+        setPlaylist([seed,...pool]);setNow(0);setStep(4);
+    };
+
+    /* 호버 이벤트 헬퍼 */
+    const hoverOn=(el,color)=>{el.style.borderColor=color;el.style.boxShadow=`0 8px 28px ${color}30, 0 0 0 2px ${color}44`;}
+    const hoverOff=(el)=>{el.style.borderColor='#E5DED9';el.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)';}
+
+    return (
+        <div style={{maxWidth:960,margin:"0 auto",padding:"40px 20px"}}>
+
+            {/* ── 스플래시 ── */}
+            {step===-1 && (
+                <div className="splash">
+                    <h2 style={{fontSize:"3rem",fontWeight:900,margin:0}}>오늘의 MOOD</h2>
+                    <h2 style={{fontSize:"3rem",fontWeight:900,margin:0}}>오늘의 Playlist</h2>
+                </div>
+            )}
+
+            {step>=0 && (<>
+
+                {/* ── 헤더 ── */}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:32}}>
+                    <div className="logo-wrap">
+                        <div className="circles-icon">
+                            <div className="ci ci1"/><div className="ci ci2"/><div className="ci ci3"/>
+                        </div>
+                        <div className="logo-text">
+                            <span className="logo-name">ENSEMBLE</span>
+                            <span className="logo-sub">TEAM PROJECT</span>
+                        </div>
+                    </div>
+                    {step===4 && (
+                        <button onClick={()=>{setStep(0);setMood(null);setCId(null);setSide(null);}}
+                            style={{background:`linear-gradient(135deg,${PURPLE},#c471ed)`,color:"#fff",padding:"12px 28px",borderRadius:28,fontWeight:800,fontSize:14,boxShadow:`0 4px 16px ${PURPLE}44`}}>
+                            처음으로
+                        </button>
+                    )}
+                </div>
+
+                {/* ── 뒤로 ── */}
+                {step>0&&step<4&&<button className="back-btn" onClick={()=>setStep(step-1)}>← 뒤로 가기</button>}
+
+                {/* ── STEP 0: 무드 선택 ── */}
+                {step===0 && (
+                    <div className="mood-grid">
+                        <div style={{textAlign:"center",marginBottom:24}}>
+                            <h2 style={{fontSize:34,fontWeight:900,margin:"0 0 6px",letterSpacing:"-0.4px"}}>오늘의 색을 알려주세요</h2>
+                            <p style={{fontSize:12,letterSpacing:"0.25em",color:"#999",margin:0,fontFamily:"'Outfit',sans-serif"}}>WHAT'S YOUR MOOD?</p>
+                        </div>
+                        <div className="mood-row">
+                            {["chill","happy","romance"].map(m=>(
+                                <button key={m} className="mood-card" style={MOOD_STYLE[m]} onClick={()=>{setMood(m);setStep(1);}}>
+                                    <img src={`./${m}.png`}/>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="mood-row">
+                            {["sad","study","party","sleep"].map(m=>(
+                                <button key={m} className="mood-card" style={MOOD_STYLE[m]} onClick={()=>{setMood(m);setStep(1);}}>
+                                    <img src={`./${m}.png`}/>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── STEP 1: 군집 선택 ── */}
+                {step===1 && mood && (
+                    <div>
+                        <div style={{textAlign:"center",marginBottom:32}}>
+                            <p style={{fontSize:13,color:"#aaa",margin:"0 0 6px",letterSpacing:"0.05em",fontWeight:500}}>어떤 느낌을 원하시나요?</p>
+                            <h1 style={{fontSize:30,fontWeight:900,margin:0,color:accent}}>오늘의 MOOD를 골라보세요.</h1>
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:`repeat(${clusters.length},1fr)`,gap:16}}>
+                            {clusters.map(cl=>(
+                                <button key={cl.id} className="cluster-card"
+                                    style={{borderColor:"#E5DED9",boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}
+                                    onMouseEnter={e=>hoverOn(e.currentTarget,accent)}
+                                    onMouseLeave={e=>hoverOff(e.currentTarget)}
+                                    onClick={()=>{setCId(cl.id);setStep(2);}}>
+                                    {/* 해시태그 한 줄 */}
+                                    <div className="tag-row">
+                                        {cl.tags.map((tag,i)=>(
+                                            <span key={i} className="hashtag" style={{color:accent}}>{tag}</span>
+                                        ))}
+                                    </div>
+                                    {/* 레이더 */}
+                                    <div style={{display:"flex",justifyContent:"center",overflow:"visible",padding:"8px 0"}}>
+                                        <RadarChart means={cl.avg} accent={accent}/>
+                                    </div>
+                                    {/* 피처 바 */}
+                                    <FeatBars means={cl.avg} accent={accent}/>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── STEP 2: 취향 질문 ── */}
+                {step===2 && qFeat && (
+                    <div className="center-screen">
+                        <h1 className="center-title">조금 더 취향을 좁혀볼까요?</h1>
+                        <p className="center-sub">당신에 대해 더 알고 싶어요</p>
+                        <div className="center-opts">
+                            {[{label:FEAT_Q[qFeat].hi,icon:"▲",s:'high'},{label:FEAT_Q[qFeat].lo,icon:"▼",s:'low'}].map((opt,i)=>(
+                                <button key={i} className="q-btn"
+                                    onMouseEnter={e=>{e.currentTarget.style.borderColor=PURPLE;e.currentTarget.style.boxShadow=`0 0 0 2px ${PURPLE}33`;}}
+                                    onMouseLeave={e=>{e.currentTarget.style.borderColor='#DDD';e.currentTarget.style.boxShadow='none';}}
+                                    onClick={()=>{setSide(opt.s);setStep(3);}}>
+                                    <div className="q-icon" style={{background:PURPLE_LIGHT,color:PURPLE}}>{opt.icon}</div>
+                                    <span>{opt.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── STEP 3: 시드 선택 ── */}
+                {step===3 && (
+                    <div className="center-screen">
+                        <h1 className="center-title">조금 더 취향을 좁혀볼까요?</h1>
+                        <p className="center-sub">어떤 음악을 기준으로 시작할까요?</p>
+                        <div className="center-opts">
+                            {[
+                                {label:"⭐ 대중성 높은 곡으로 시작하기",name:popSeed[0],artist:popSeed[1],pref:'pop'},
+                                {label:"🎯 내 취향에 딱 맞는 곡으로 시작하기",name:simSeed[0],artist:simSeed[1],pref:'sim'}
+                            ].map((opt,i)=>(
+                                <button key={i} className="seed-btn"
+                                    onMouseEnter={e=>{e.currentTarget.style.borderColor=PURPLE;e.currentTarget.style.boxShadow=`0 0 0 2px ${PURPLE}33`;}}
+                                    onMouseLeave={e=>{e.currentTarget.style.borderColor='#DDD';e.currentTarget.style.boxShadow='none';}}
+                                    onClick={()=>generatePlaylist(opt.pref)}>
+                                    <span className="seed-label" style={{color:PURPLE}}>{opt.label}</span>
+                                    <span className="seed-name">{opt.name}</span>
+                                    <span className="seed-artist">{opt.artist}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── STEP 4: 플레이리스트 (전부 퍼플 고정) ── */}
+                {step===4 && (
+                    <div style={{display:"flex",gap:20,alignItems:"flex-start",flexWrap:"wrap"}}>
+                        <div style={{flex:"1 1 300px",position:"sticky",top:20}}>
+                            <iframe
+                                src={`https://open.spotify.com/embed/track/${playlist[nowPlaying]?.track_id}?utm_source=generator`}
+                                width="100%" height="352" frameBorder="0" allowFullScreen
+                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                loading="lazy" style={{borderRadius:16,boxShadow:"0 10px 30px rgba(0,0,0,0.1)"}}/>
+                        </div>
+                        <div style={{flex:"2 1 500px",display:"flex",flexDirection:"column",gap:10}}>
+                            {playlist.map((s,i)=>(
+                                <div key={i} onClick={()=>setNow(i)}
+                                    style={{padding:"16px 20px",background:i===nowPlaying?PURPLE_LIGHT:"#FFFFFF",
+                                        border:"1.5px solid",borderColor:i===nowPlaying?PURPLE:"#E5DED9",
+                                        borderRadius:16,display:"grid",gridTemplateColumns:"50px 1fr",
+                                        alignItems:"center",cursor:"pointer",transition:"all 0.18s",
+                                        boxShadow:i===nowPlaying?`0 2px 12px ${PURPLE}22`:"none"}}>
+                                    <div style={{width:40,height:40,background:i===nowPlaying?`${PURPLE}22`:"#F0EAE7",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",color:PURPLE,fontWeight:900,fontSize:14}}>
+                                        {i===nowPlaying?"▶":i+1}
+                                    </div>
+                                    <div>
+                                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                                            <div>
+                                                <div style={{fontWeight:700,color:i===nowPlaying?PURPLE:"#131313",fontSize:15}}>{s.track_name}</div>
+                                                <div style={{fontSize:12,color:"#999",marginTop:1}}>{s.artists}</div>
+                                            </div>
+                                            <div style={{fontSize:11,color:PURPLE,fontWeight:700,whiteSpace:"nowrap",marginLeft:12}}>
+                                                {i===0?"대표곡":`${s.similarity}% 유사`}
+                                            </div>
+                                        </div>
+                                        <div className="pl-bar-bg">
+                                            <div className="pl-bar-fill" style={{width:`${s.similarity}%`}}/>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>)}
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
