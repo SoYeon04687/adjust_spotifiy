@@ -22,9 +22,55 @@
         @keyframes fadeSplash { 0%{opacity:0;transform:translateY(10px)} 20%{opacity:1;transform:translateY(0)} 80%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-10px)} }
 
         /* ── 무드 카드 ── */
-        .mood-grid { display:flex; flex-direction:column; align-items:center; gap:20px; }
-        .mood-row  { display:flex; gap:18px; justify-content:center; }
-        .mood-card { width:155px; height:155px; border-radius:30px; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; box-shadow:0 8px 24px rgba(0,0,0,0.13); }
+        /* ── 반응형 무드 그리드 수정 ── */
+        .mood-grid { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: clamp(12px, 3vw, 24px); /* 간격을 화면 크기에 따라 유연하게 */
+            margin-top: 20px; 
+            width: 100%;
+        }
+
+        .mood-row { 
+            display: flex; 
+            gap: clamp(10px, 2.5vw, 20px); 
+            justify-content: center; 
+            width: 100%; 
+            flex-wrap: wrap; /* 중요! 화면이 좁으면 다음 줄로 넘어가게 함 */
+        }
+
+        .mood-card { 
+            position: relative; 
+            /* 모바일에서는 조금 더 작게, PC에서는 원래 크기로 */
+            width: clamp(140px, 42vw, 160px); 
+            height: clamp(140px, 42vw, 160px); 
+            border-radius: 28px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s ease; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1); 
+            outline: none; 
+        }
+
+        /* ── 모바일 최적화 미디어 쿼리 추가 ── */
+        @media (max-width: 480px) {
+            .mood-row {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr); /* 2열 세로 배열로 강제 */
+                gap: 12px;
+                padding: 0 10px;
+            }
+            .mood-card {
+                width: 100%; /* 그리드 칸에 꽉 차게 */
+                height: 150px;
+            }
+            .splash-screen h2 {
+                font-size: 2rem !important; /* 글자 크기 조정 */
+            }
+        }
         .mood-card::before { content:''; position:absolute; inset:0; background:rgba(255,255,255,0.4); opacity:0; transition:opacity 0.15s; }
         .mood-card:hover { transform:translateY(-6px) scale(1.05); box-shadow:0 18px 40px rgba(0,0,0,0.22); }
         .mood-card:hover::before { opacity:1; }
